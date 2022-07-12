@@ -55,12 +55,7 @@ def upgrade():
 
             # Note that the resample params could be encoded as empty strings.
             if "resample_rule" in params:
-                rule = params["resample_rule"]
-
-                # Per the old logic how takes precedence over fill-method. Note that
-                # due to UI options, alongside None, empty strings were viable choices
-                # hence the truthiness checks.
-                if rule:
+                if rule := params["resample_rule"]:
                     how = None
 
                     if "resample_how" in params:
@@ -70,13 +65,11 @@ def upgrade():
                             params["resample_method"] = how
 
                     if not how and "fill_method" in params:
-                        fill_method = params["resample_fillmethod"]
-
-                        if fill_method:
+                        if fill_method := params["resample_fillmethod"]:
                             params["resample_method"] = fill_method
 
                     # Ensure that the resample logic is fully defined.
-                    if not "resample_method" in params:
+                    if "resample_method" not in params:
                         del params["resample_rule"]
                 else:
                     del params["resample_rule"]

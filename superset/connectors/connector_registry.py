@@ -54,16 +54,14 @@ class ConnectorRegistry:
         if datasource_type not in cls.sources:
             raise DatasetNotFoundError()
 
-        datasource = (
+        if datasource := (
             session.query(cls.sources[datasource_type])
             .filter_by(id=datasource_id)
             .one_or_none()
-        )
-
-        if not datasource:
+        ):
+            return datasource
+        else:
             raise DatasetNotFoundError()
-
-        return datasource
 
     @classmethod
     def get_all_datasources(cls, session: Session) -> List["BaseDatasource"]:

@@ -29,9 +29,7 @@ class BaseStatsLogger:
         self.prefix = prefix
 
     def key(self, key: str) -> str:
-        if self.prefix:
-            return self.prefix + key
-        return key
+        return self.prefix + key if self.prefix else key
 
     def incr(self, key: str) -> None:
         """Increment a counter"""
@@ -51,14 +49,14 @@ class BaseStatsLogger:
 
 class DummyStatsLogger(BaseStatsLogger):
     def incr(self, key: str) -> None:
-        logger.debug(Fore.CYAN + "[stats_logger] (incr) " + key + Style.RESET_ALL)
+        logger.debug(f"{Fore.CYAN}[stats_logger] (incr) {key}{Style.RESET_ALL}")
 
     def decr(self, key: str) -> None:
-        logger.debug((Fore.CYAN + "[stats_logger] (decr) " + key + Style.RESET_ALL))
+        logger.debug(f"{Fore.CYAN}[stats_logger] (decr) {key}{Style.RESET_ALL}")
 
     def timing(self, key: str, value: float) -> None:
         logger.debug(
-            (Fore.CYAN + f"[stats_logger] (timing) {key} | {value} " + Style.RESET_ALL)
+            f"{Fore.CYAN}[stats_logger] (timing) {key} | {value} {Style.RESET_ALL}"
         )
 
     def gauge(self, key: str, value: float) -> None:
@@ -90,10 +88,7 @@ try:
             If statsd_client argument is given, all other arguments are ignored and the
             supplied client will be used to emit metrics.
             """
-            if statsd_client:
-                self.client = statsd_client
-            else:
-                self.client = StatsClient(host=host, port=port, prefix=prefix)
+            self.client = statsd_client or StatsClient(host=host, port=port, prefix=prefix)
 
         def incr(self, key: str) -> None:
             self.client.incr(key)

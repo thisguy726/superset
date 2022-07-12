@@ -120,8 +120,6 @@ def upgrade():
         except Exception as e:
             print(e)
             print(f"Parsing params for slice {slc.id} failed.")
-            pass
-
     print(f"{slices_changed} slices altered")
     session.commit()
     session.close()

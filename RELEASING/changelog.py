@@ -95,9 +95,9 @@ class GitChangeLog:
                 self._github_prs[pr_number] = pull_request
         except BadCredentialsException as ex:
             print(
-                f"Bad credentials to github provided"
-                f" use access_token parameter or set GITHUB_TOKEN"
+                'Bad credentials to github provided use access_token parameter or set GITHUB_TOKEN'
             )
+
             sys.exit(1)
 
         return pull_request
@@ -111,8 +111,7 @@ class GitChangeLog:
         if github_login:
             return github_login
         if git_log.pr_number:
-            pr_info = self._fetch_github_pr(git_log.pr_number)
-            if pr_info:
+            if pr_info := self._fetch_github_pr(git_log.pr_number):
                 github_login = pr_info.user.login
             else:
                 github_login = author_name
@@ -264,9 +263,7 @@ class GitLogs:
     def _git_get_current_head() -> str:
         output = os.popen("git status | head -1").read()
         match = re.match("(?:HEAD detached at|On branch) (.*)", output)
-        if not match:
-            return ""
-        return match.group(1)
+        return match[1] if match else ""
 
     def _git_checkout(self, git_ref: str) -> None:
         os.popen(f"git checkout {git_ref}").read()
@@ -292,10 +289,8 @@ class GitLogs:
     def _parse_log(log_item: str) -> GitLog:
         pr_number = None
         split_log_item = log_item.split("|")
-        # parse the PR number from the log message
-        match = re.match(r".*\(\#(\d*)\)", split_log_item[4])
-        if match:
-            pr_number = int(match.group(1))
+        if match := re.match(r".*\(\#(\d*)\)", split_log_item[4]):
+            pr_number = int(match[1])
         return GitLog(
             sha=split_log_item[0],
             author=split_log_item[1],

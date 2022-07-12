@@ -100,7 +100,7 @@ def load_world_bank_health_n_pop(  # pylint: disable=too-many-locals, too-many-s
         "sum__SP_RUR_TOTL",
     ]
     for metric in metrics:
-        if not any(col.metric_name == metric for col in tbl.metrics):
+        if all(col.metric_name != metric for col in tbl.metrics):
             aggr_func = metric[:3]
             col = str(column(metric[5:]).compile(db.engine))
             tbl.metrics.append(

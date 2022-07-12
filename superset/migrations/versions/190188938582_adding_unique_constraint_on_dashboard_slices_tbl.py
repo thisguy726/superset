@@ -62,10 +62,9 @@ def upgrade():
     # remove dup entries
     for record in dup_records:
         print(
-            "remove duplicates from dashboard {} slice {}".format(
-                record.dashboard_id, record.slice_id
-            )
+            f"remove duplicates from dashboard {record.dashboard_id} slice {record.slice_id}"
         )
+
 
         ids = [
             item.id

@@ -64,11 +64,10 @@ class BulkDeleteDatasetCommand(BaseCommand):
                     if view_menu:
                         db.session.delete(view_menu)
                 else:
-                    if not view_menu:
-                        logger.error(
-                            "Could not find the data access permission for the dataset",
-                            exc_info=True,
-                        )
+                    logger.error(
+                        "Could not find the data access permission for the dataset",
+                        exc_info=True,
+                    )
             db.session.commit()
 
             return None

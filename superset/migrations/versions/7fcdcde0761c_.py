@@ -58,7 +58,7 @@ def upgrade():
     session = db.Session(bind=bind)
 
     dashboards = session.query(Dashboard).all()
-    for i, dashboard in enumerate(dashboards):
+    for dashboard in dashboards:
         original_text = dashboard.position_json or ""
         position_json = json.loads(original_text or "{}")
         if is_v2_dash(position_json):
@@ -72,10 +72,9 @@ def upgrade():
 
             dashboard.position_json = text
             print(
-                "dash id:{} position_json size from {} to {}".format(
-                    dashboard.id, len(original_text), len(text)
-                )
+                f"dash id:{dashboard.id} position_json size from {len(original_text)} to {len(text)}"
             )
+
             session.merge(dashboard)
             session.commit()
 

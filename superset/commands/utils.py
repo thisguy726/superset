@@ -54,10 +54,10 @@ def populate_owners(
         # make sure non-admins can't remove themselves as owner by mistake
         owners.append(user)
     for owner_id in owner_ids:
-        owner = security_manager.get_user_by_id(owner_id)
-        if not owner:
+        if owner := security_manager.get_user_by_id(owner_id):
+            owners.append(owner)
+        else:
             raise OwnersNotFoundValidationError()
-        owners.append(owner)
     return owners
 
 

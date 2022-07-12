@@ -29,8 +29,7 @@ class CreateFilterStateCommand(CreateKeyValueCommand):
     def create(
         self, actor: User, resource_id: int, key: str, value: str
     ) -> Optional[bool]:
-        dashboard = DashboardDAO.get_by_id_or_slug(str(resource_id))
-        if dashboard:
+        if dashboard := DashboardDAO.get_by_id_or_slug(str(resource_id)):
             entry: Entry = {"owner": actor.get_user_id(), "value": value}
             return cache_manager.filter_state_cache.set(
                 cache_key(resource_id, key), entry

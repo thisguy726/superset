@@ -84,10 +84,7 @@ def is_valid_config(file_name: str) -> bool:
         return False
 
     # ensure extension is YAML
-    if path.suffix.lower() not in {".yaml", ".yml"}:
-        return False
-
-    return True
+    return path.suffix.lower() in {".yaml", ".yml"}
 
 
 def get_contents_from_bundle(bundle: ZipFile) -> Dict[str, str]:

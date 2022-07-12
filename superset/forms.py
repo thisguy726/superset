@@ -30,10 +30,7 @@ class JsonListField(Field):
         return json.dumps(self.data)
 
     def process_formdata(self, valuelist: List[str]) -> None:
-        if valuelist and valuelist[0]:
-            self.data = json.loads(valuelist[0])
-        else:
-            self.data = []
+        self.data = json.loads(valuelist[0]) if valuelist and valuelist[0] else []
 
 
 class CommaSeparatedListField(Field):
@@ -41,16 +38,10 @@ class CommaSeparatedListField(Field):
     data: List[str] = []
 
     def _value(self) -> str:
-        if self.data:
-            return ", ".join(self.data)
-
-        return ""
+        return ", ".join(self.data) if self.data else ""
 
     def process_formdata(self, valuelist: List[str]) -> None:
-        if valuelist:
-            self.data = [x.strip() for x in valuelist[0].split(",")]
-        else:
-            self.data = []
+        self.data = [x.strip() for x in valuelist[0].split(",")] if valuelist else []
 
 
 def filter_not_empty_values(values: Optional[List[Any]]) -> Optional[List[Any]]:
@@ -58,6 +49,4 @@ def filter_not_empty_values(values: Optional[List[Any]]) -> Optional[List[Any]]:
     if not values:
         return None
     data = [value for value in values if value]
-    if not data:
-        return None
-    return data
+    return data or None

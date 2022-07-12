@@ -71,16 +71,19 @@ class AuditMixin:
             return None
 
     @declared_attr
-    def created_by_fk(cls):
+    def created_by_fk(self):
         return Column(
-            Integer, ForeignKey("ab_user.id"), default=cls.get_user_id, nullable=False
+            Integer,
+            ForeignKey("ab_user.id"),
+            default=self.get_user_id,
+            nullable=False,
         )
 
     @declared_attr
-    def created_by(cls):
+    def created_by(self):
         return relationship(
             "User",
-            primaryjoin="%s.created_by_fk == User.id" % cls.__name__,
+            primaryjoin=f"{self.__name__}.created_by_fk == User.id",
             enable_typechecks=False,
         )
 

@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """This module contains data related to countries and is used for geo mapping"""
+
 # pylint: disable=too-many-lines
 from typing import Any, Dict, List, Optional
 
@@ -2491,12 +2492,11 @@ countries: List[Dict[str, Any]] = [
     },
 ]
 
-all_lookups: Dict[str, Dict[str, Dict[str, Any]]] = {}
 lookups = ["cioc", "cca2", "cca3", "name"]
-for lookup in lookups:
-    all_lookups[lookup] = {}
-    for country in countries:
-        all_lookups[lookup][country[lookup].lower()] = country
+all_lookups: Dict[str, Dict[str, Dict[str, Any]]] = {
+    lookup: {country[lookup].lower(): country for country in countries}
+    for lookup in lookups
+}
 
 
 def get(field: str, symbol: str) -> Optional[Dict[str, Any]]:

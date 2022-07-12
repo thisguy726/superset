@@ -189,11 +189,10 @@ def import_datasource(  # pylint: disable=too-many-arguments
     logger.info("Started import of the datasource: %s", i_datasource.to_json())
 
     i_datasource.id = None
-    i_datasource.database_id = (
-        database_id
-        if database_id
-        else getattr(lookup_database(i_datasource), "id", None)
+    i_datasource.database_id = database_id or getattr(
+        lookup_database(i_datasource), "id", None
     )
+
     i_datasource.alter_params(import_time=import_time)
 
     # override the datasource
@@ -201,12 +200,10 @@ def import_datasource(  # pylint: disable=too-many-arguments
 
     if datasource:
         datasource.override(i_datasource)
-        session.flush()
     else:
         datasource = i_datasource.copy()
         session.add(datasource)
-        session.flush()
-
+    session.flush()
     for metric in i_datasource.metrics:
         new_m = metric.copy()
         new_m.table_id = datasource.id
@@ -334,12 +331,7 @@ class ImportDatasetsCommand(BaseCommand):
                 if DATABASES_KEY not in config and DRUID_CLUSTERS_KEY not in config:
                     raise IncorrectVersionError(f"{file_name} has no valid keys")
 
-            # UI export
-            elif isinstance(config, list):
-                # TODO (betodealmeida): validate with Marshmallow
-                pass
-
-            else:
+            elif not isinstance(config, list):
                 raise IncorrectVersionError(f"{file_name} is not a valid file")
 
             self._configs[file_name] = config

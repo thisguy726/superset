@@ -559,7 +559,7 @@ class TableModelView(  # pylint: disable=too-many-ancestors
         resp = super().edit(pk)
         if isinstance(resp, str):
             return resp
-        return redirect("/superset/explore/table/{}/".format(pk))
+        return redirect(f"/superset/explore/table/{pk}/")
 
     @action(
         "refresh", __("Refresh Metadata"), __("Refresh column metadata"), "fa-refresh"
@@ -603,9 +603,11 @@ class TableModelView(  # pylint: disable=too-many-ancestors
             )
             flash(success_msg, "info")
         if results.added:
-            added_tables = []
-            for table, cols in results.added.items():
-                added_tables.append(f"{table} ({', '.join(cols)})")
+            added_tables = [
+                f"{table} ({', '.join(cols)})"
+                for table, cols in results.added.items()
+            ]
+
             flash(
                 _(
                     "The following tables added new columns: %(tables)s",
@@ -614,9 +616,11 @@ class TableModelView(  # pylint: disable=too-many-ancestors
                 "info",
             )
         if results.removed:
-            removed_tables = []
-            for table, cols in results.removed.items():
-                removed_tables.append(f"{table} ({', '.join(cols)})")
+            removed_tables = [
+                f"{table} ({', '.join(cols)})"
+                for table, cols in results.removed.items()
+            ]
+
             flash(
                 _(
                     "The following tables removed columns: %(tables)s",
@@ -625,9 +629,11 @@ class TableModelView(  # pylint: disable=too-many-ancestors
                 "info",
             )
         if results.modified:
-            modified_tables = []
-            for table, cols in results.modified.items():
-                modified_tables.append(f"{table} ({', '.join(cols)})")
+            modified_tables = [
+                f"{table} ({', '.join(cols)})"
+                for table, cols in results.modified.items()
+            ]
+
             flash(
                 _(
                     "The following tables update column metadata: %(tables)s",
@@ -647,7 +653,8 @@ class TableModelView(  # pylint: disable=too-many-ancestors
     @expose("/list/")
     @has_access
     def list(self) -> FlaskResponse:
-        if not is_feature_enabled("ENABLE_REACT_CRUD_VIEWS"):
-            return super().list()
-
-        return super().render_app_template()
+        return (
+            super().render_app_template()
+            if is_feature_enabled("ENABLE_REACT_CRUD_VIEWS")
+            else super().list()
+        )

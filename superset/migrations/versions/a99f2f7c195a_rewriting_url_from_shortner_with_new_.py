@@ -41,13 +41,12 @@ Base = declarative_base()
 def parse_querystring(qs):
     d = {}
     for k, v in parse.parse_qsl(qs):
-        if not k in d:
+        if k not in d:
             d[k] = v
+        elif isinstance(d[k], list):
+            d[k].append(v)
         else:
-            if isinstance(d[k], list):
-                d[k].append(v)
-            else:
-                d[k] = [d[k], v]
+            d[k] = [d[k], v]
     return d
 
 
@@ -75,14 +74,14 @@ def upgrade():
         ):
             d = parse_querystring(url.url.split("?")[1])
             split = url.url.split("/")
-            d["datasource"] = split[5] + "__" + split[4]
+            d["datasource"] = f"{split[5]}__{split[4]}"
             newurl = (
                 "/".join(split[:-1]) + "/?form_data=" + parse.quote_plus(json.dumps(d))
             )
             url.url = newurl
             session.merge(url)
             session.commit()
-        print("Updating url ({}/{})".format(i, urls_len))
+        print(f"Updating url ({i}/{urls_len})")
     session.close()
 
 

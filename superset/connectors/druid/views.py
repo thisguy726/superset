@@ -124,24 +124,23 @@ class DruidColumnInlineView(  # pylint: disable=too-many-ancestors
     def pre_update(self, item: "DruidColumnInlineView") -> None:
         # If a dimension spec JSON is given, ensure that it is
         # valid JSON and that `outputName` is specified
-        if item.dimension_spec_json:
-            try:
-                dimension_spec = json.loads(item.dimension_spec_json)
-            except ValueError as ex:
-                raise ValueError("Invalid Dimension Spec JSON: " + str(ex)) from ex
-            if not isinstance(dimension_spec, dict):
-                raise ValueError("Dimension Spec must be a JSON object")
-            if "outputName" not in dimension_spec:
-                raise ValueError("Dimension Spec does not contain `outputName`")
-            if "dimension" not in dimension_spec:
-                raise ValueError("Dimension Spec is missing `dimension`")
+        if not item.dimension_spec_json:
+            return
+        try:
+            dimension_spec = json.loads(item.dimension_spec_json)
+        except ValueError as ex:
+            raise ValueError(f"Invalid Dimension Spec JSON: {str(ex)}") from ex
+        if not isinstance(dimension_spec, dict):
+            raise ValueError("Dimension Spec must be a JSON object")
+        if "outputName" not in dimension_spec:
+            raise ValueError("Dimension Spec does not contain `outputName`")
+        if "dimension" not in dimension_spec:
+            raise ValueError("Dimension Spec is missing `dimension`")
             # `outputName` should be the same as the `column_name`
-            if dimension_spec["outputName"] != item.column_name:
-                raise ValueError(
-                    "`outputName` [{}] unequal to `column_name` [{}]".format(
-                        dimension_spec["outputName"], item.column_name
-                    )
-                )
+        if dimension_spec["outputName"] != item.column_name:
+            raise ValueError(
+                f'`outputName` [{dimension_spec["outputName"]}] unequal to `column_name` [{item.column_name}]'
+            )
 
     def post_update(self, item: "DruidColumnInlineView") -> None:
         item.refresh_metrics()
@@ -408,11 +407,10 @@ class Druid(EnsureEnabledMixin, BaseSupersetView):
             except Exception as ex:  # pylint: disable=broad-except
                 valid_cluster = False
                 flash(
-                    "Error while processing cluster '{}'\n{}".format(
-                        cluster_name, utils.error_msg_from_exception(ex)
-                    ),
+                    f"Error while processing cluster '{cluster_name}'\n{utils.error_msg_from_exception(ex)}",
                     "danger",
                 )
+
                 logger.exception(ex)
             if valid_cluster:
                 cluster.metadata_last_refreshed = datetime.now()

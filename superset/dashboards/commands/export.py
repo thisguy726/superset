@@ -148,11 +148,11 @@ class ExportDashboardsCommand(ExportModelsCommand):
         # if any charts or not referenced in position, we need to add them
         # in a new row
         referenced_charts = find_chart_uuids(payload["position"])
-        orphan_charts = {
-            chart for chart in model.slices if str(chart.uuid) not in referenced_charts
-        }
-
-        if orphan_charts:
+        if orphan_charts := {
+            chart
+            for chart in model.slices
+            if str(chart.uuid) not in referenced_charts
+        }:
             payload["position"] = append_charts(payload["position"], orphan_charts)
 
         payload["version"] = EXPORT_VERSION

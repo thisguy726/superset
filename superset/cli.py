@@ -47,8 +47,7 @@ logger = logging.getLogger(__name__)
 
 feature_flags = config.DEFAULT_FEATURE_FLAGS.copy()
 feature_flags.update(config.FEATURE_FLAGS)
-feature_flags_func = config.GET_FEATURE_FLAGS_FUNC
-if feature_flags_func:
+if feature_flags_func := config.GET_FEATURE_FLAGS_FUNC:
     # pylint: disable=not-callable
     try:
         feature_flags = feature_flags_func(feature_flags)
@@ -105,7 +104,7 @@ def version(verbose: bool) -> None:
     )
     print(Fore.BLUE + "-=" * 15)
     if verbose:
-        print("[DB] : " + "{}".format(db.engine))
+        print("[DB] : " + f"{db.engine}")
     print(Style.RESET_ALL)
 
 
@@ -254,10 +253,10 @@ def refresh_druid(datasource: str, merge: bool) -> None:
         try:
             cluster.refresh_datasources(datasource_name=datasource, merge_flag=merge)
         except Exception as ex:  # pylint: disable=broad-except
-            print("Error while processing cluster '{}'\n{}".format(cluster, str(ex)))
+            print(f"Error while processing cluster '{cluster}'\n{str(ex)}")
             logger.exception(ex)
         cluster.metadata_last_refreshed = datetime.now()
-        print("Refreshed metadata from cluster " "[" + cluster.cluster_name + "]")
+        print(f"Refreshed metadata from cluster [{cluster.cluster_name}]")
     session.commit()
 
 
@@ -510,10 +509,7 @@ else:
             files.extend(path_object.rglob("*.json"))
         if username is not None:
             g.user = security_manager.find_user(username=username)
-        contents = {}
-        for path_ in files:
-            with open(path_) as file:
-                contents[path_.name] = file.read()
+        contents = {path_.name: Path(path_).read_text() for path_ in files}
         try:
             ImportDashboardsCommand(contents).run()
         except Exception:  # pylint: disable=broad-except
@@ -563,10 +559,7 @@ else:
         elif path_object.exists() and recursive:
             files.extend(path_object.rglob("*.yaml"))
             files.extend(path_object.rglob("*.yml"))
-        contents = {}
-        for path_ in files:
-            with open(path_) as file:
-                contents[path_.name] = file.read()
+        contents = {path_.name: Path(path_).read_text() for path_ in files}
         try:
             ImportDatasetsCommand(contents, sync_columns, sync_metrics).run()
         except Exception:  # pylint: disable=broad-except
@@ -600,7 +593,7 @@ def update_datasources_cache() -> None:
 
     for database in db.session.query(Database).all():
         if database.allow_multi_schema_metadata_fetch:
-            print("Fetching {} datasources ...".format(database.name))
+            print(f"Fetching {database.name} datasources ...")
             try:
                 database.get_all_table_names_in_database(
                     force=True, cache=True, cache_timeout=24 * 60 * 60
@@ -609,7 +602,7 @@ def update_datasources_cache() -> None:
                     force=True, cache=True, cache_timeout=24 * 60 * 60
                 )
             except Exception as ex:  # pylint: disable=broad-except
-                print("{}".format(str(ex)))
+                print(f"{str(ex)}")
 
 
 @superset.command()
@@ -658,7 +651,7 @@ def flower(port: int, address: str) -> None:
         "The 'superset flower' command is deprecated. Please use the 'celery "
         "flower' command instead."
     )
-    print(Fore.GREEN + "Starting a Celery Flower instance")
+    print(f"{Fore.GREEN}Starting a Celery Flower instance")
     print(Fore.BLUE + "-=" * 40)
     print(Fore.YELLOW + cmd)
     print(Fore.BLUE + "-=" * 40)
@@ -752,7 +745,7 @@ def load_test_users() -> None:
 
     Syncs permissions for those users/roles
     """
-    print(Fore.GREEN + "Loading a set of users for unit tests")
+    print(f"{Fore.GREEN}Loading a set of users for unit tests")
     load_test_users_run()
 
 
@@ -762,48 +755,49 @@ def load_test_users_run() -> None:
 
     Syncs permissions for those users/roles
     """
-    if app.config["TESTING"]:
+    if not app.config["TESTING"]:
+        return
+    sm = security_manager
 
-        sm = security_manager
+    examples_db = utils.get_example_database()
 
-        examples_db = utils.get_example_database()
+    examples_pv = sm.add_permission_view_menu("database_access", examples_db.perm)
 
-        examples_pv = sm.add_permission_view_menu("database_access", examples_db.perm)
+    sm.sync_role_definitions()
+    gamma_sqllab_role = sm.add_role("gamma_sqllab")
+    sm.add_permission_role(gamma_sqllab_role, examples_pv)
 
-        sm.sync_role_definitions()
-        gamma_sqllab_role = sm.add_role("gamma_sqllab")
-        sm.add_permission_role(gamma_sqllab_role, examples_pv)
+    gamma_no_csv_role = sm.add_role("gamma_no_csv")
+    sm.add_permission_role(gamma_no_csv_role, examples_pv)
 
-        gamma_no_csv_role = sm.add_role("gamma_no_csv")
-        sm.add_permission_role(gamma_no_csv_role, examples_pv)
+    for role in ["Gamma", "sql_lab"]:
+        for perm in sm.find_role(role).permissions:
+            sm.add_permission_role(gamma_sqllab_role, perm)
 
-        for role in ["Gamma", "sql_lab"]:
-            for perm in sm.find_role(role).permissions:
-                sm.add_permission_role(gamma_sqllab_role, perm)
+            if str(perm) != "can csv on Superset":
+                sm.add_permission_role(gamma_no_csv_role, perm)
 
-                if str(perm) != "can csv on Superset":
-                    sm.add_permission_role(gamma_no_csv_role, perm)
+    users = (
+        ("admin", "Admin"),
+        ("gamma", "Gamma"),
+        ("gamma2", "Gamma"),
+        ("gamma_sqllab", "gamma_sqllab"),
+        ("alpha", "Alpha"),
+        ("gamma_no_csv", "gamma_no_csv"),
+    )
+    for username, role in users:
+        user = sm.find_user(username)
+        if not user:
+            sm.add_user(
+                username,
+                username,
+                "user",
+                f"{username}@fab.org",
+                sm.find_role(role),
+                password="general",
+            )
 
-        users = (
-            ("admin", "Admin"),
-            ("gamma", "Gamma"),
-            ("gamma2", "Gamma"),
-            ("gamma_sqllab", "gamma_sqllab"),
-            ("alpha", "Alpha"),
-            ("gamma_no_csv", "gamma_no_csv"),
-        )
-        for username, role in users:
-            user = sm.find_user(username)
-            if not user:
-                sm.add_user(
-                    username,
-                    username,
-                    "user",
-                    username + "@fab.org",
-                    sm.find_role(role),
-                    password="general",
-                )
-        sm.get_session.commit()
+    sm.get_session.commit()
 
 
 @superset.command()
@@ -858,8 +852,9 @@ def update_api_docs() -> None:
         openapi_version="3.0.2",
         info=dict(description=current_app.appbuilder.app_name),
         plugins=[MarshmallowPlugin()],
-        servers=[{"url": "/api/{}".format(api_version)}],
+        servers=[{"url": f"/api/{api_version}"}],
     )
+
     for base_api in current_app.appbuilder.baseviews:
         if isinstance(base_api, BaseApi) and base_api.version == api_version:
             base_api.add_api_spec(api_spec)

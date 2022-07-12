@@ -107,13 +107,13 @@ class ImportExamplesCommand(ImportModelsCommand):
         for file_name, config in configs.items():
             if file_name.startswith("datasets/"):
                 # find the ID of the corresponding database
-                if config["database_uuid"] not in database_ids:
-                    if examples_db is None:
-                        raise Exception("Cannot find examples database")
-                    config["database_id"] = examples_db.id
-                else:
+                if config["database_uuid"] in database_ids:
                     config["database_id"] = database_ids[config["database_uuid"]]
 
+                elif examples_db is None:
+                    raise Exception("Cannot find examples database")
+                else:
+                    config["database_id"] = examples_db.id
                 # set schema
                 if config["schema"] is None:
                     config["schema"] = get_example_default_schema()

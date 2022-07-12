@@ -47,8 +47,7 @@ class DeleteDatasetMetricCommand(BaseCommand):
         try:
             if not self._model:
                 raise DatasetMetricNotFoundError()
-            column = DatasetDAO.delete_metric(self._model)
-            return column
+            return DatasetDAO.delete_metric(self._model)
         except DAODeleteFailedError as ex:
             logger.exception(ex.exception)
             raise DatasetMetricDeleteFailedError() from ex

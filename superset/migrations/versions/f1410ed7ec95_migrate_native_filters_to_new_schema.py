@@ -55,8 +55,7 @@ def upgrade_filters(native_filters: Iterable[Dict[str, Any]]) -> int:
         default_value = native_filter.pop("defaultValue", None)
         if default_value is not None:
             changed_filters += 1
-            default_data_mask = {}
-            default_data_mask["filterState"] = {"value": default_value}
+            default_data_mask = {"filterState": {"value": default_value}}
             native_filter["defaultDataMask"] = default_data_mask
     return changed_filters
 
@@ -78,10 +77,7 @@ def downgrade_filters(native_filters: Iterable[Dict[str, Any]]) -> int:
 
 def upgrade_dashboard(dashboard: Dict[str, Any]) -> Tuple[int, int]:
     changed_filters, changed_filter_sets = 0, 0
-    # upgrade native select filter metadata
-    # upgrade native select filter metadata
-    native_filters = dashboard.get("native_filter_configuration")
-    if native_filters:
+    if native_filters := dashboard.get("native_filter_configuration"):
         changed_filters += upgrade_filters(native_filters)
 
     # upgrade filter sets
@@ -122,9 +118,7 @@ def upgrade():
 
 def downgrade_dashboard(dashboard: Dict[str, Any]) -> Tuple[int, int]:
     changed_filters, changed_filter_sets = 0, 0
-    # upgrade native select filter metadata
-    native_filters = dashboard.get("native_filter_configuration")
-    if native_filters:
+    if native_filters := dashboard.get("native_filter_configuration"):
         changed_filters += downgrade_filters(native_filters)
 
     # upgrade filter sets

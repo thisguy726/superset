@@ -81,9 +81,7 @@ def load_configs_from_directory(
         if path_name.is_dir():
             queue.extend(path_name.glob("*"))
         elif path_name.suffix.lower() in YAML_EXTENSIONS:
-            with open(path_name) as fp:
-                contents[str(path_name.relative_to(root))] = fp.read()
-
+            contents[str(path_name.relative_to(root))] = Path(path_name).read_text()
     # removing "type" from the metadata allows us to import any exported model
     # from the unzipped directory directly
     metadata = yaml.load(contents.get(METADATA_FILE_NAME, "{}"), Loader=None)

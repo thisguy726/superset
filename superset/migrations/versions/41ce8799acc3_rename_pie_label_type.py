@@ -59,16 +59,13 @@ def upgrade():
     for slc in slices:
         try:
             params = json.loads(slc.params)
-            pie_label_type = params.pop("pie_label_type", None)
-            if pie_label_type:
+            if pie_label_type := params.pop("pie_label_type", None):
                 changes += 1
                 params["label_type"] = pie_label_type
                 slc.params = json.dumps(params, sort_keys=True)
         except Exception as e:
             print(e)
             print(f"Parsing params for slice {slc.id} failed.")
-            pass
-
     session.commit()
     session.close()
     print(f"Updated {changes} pie chart labels.")
@@ -87,16 +84,13 @@ def downgrade():
     for slc in slices:
         try:
             params = json.loads(slc.params)
-            label_type = params.pop("label_type", None)
-            if label_type:
+            if label_type := params.pop("label_type", None):
                 changes += 1
                 params["pie_label_type"] = label_type
                 slc.params = json.dumps(params, sort_keys=True)
         except Exception as e:
             print(e)
             print(f"Parsing params for slice {slc.id} failed.")
-            pass
-
     session.commit()
     session.close()
     print(f"Updated {changes} pie chart labels.")

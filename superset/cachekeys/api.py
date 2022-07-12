@@ -83,14 +83,13 @@ class CacheRestApi(BaseSupersetModelRestApi):
             return self.response_400(message=str(error))
         datasource_uids = set(datasources.get("datasource_uids", []))
         for ds in datasources.get("datasources", []):
-            ds_obj = ConnectorRegistry.get_datasource_by_name(
+            if ds_obj := ConnectorRegistry.get_datasource_by_name(
                 session=db.session,
                 datasource_type=ds.get("datasource_type"),
                 datasource_name=ds.get("datasource_name"),
                 schema=ds.get("schema"),
                 database_name=ds.get("database_name"),
-            )
-            if ds_obj:
+            ):
                 datasource_uids.add(ds_obj.uid)
 
         cache_key_objs = (

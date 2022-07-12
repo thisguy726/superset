@@ -273,9 +273,8 @@ class HiveEngineSpec(PrestoEngineSpec):
     @classmethod
     def _extract_error_message(cls, ex: Exception) -> str:
         msg = str(ex)
-        match = re.search(r'errorMessage="(.*?)(?<!\\)"', msg)
-        if match:
-            msg = match.group(1)
+        if match := re.search(r'errorMessage="(.*?)(?<!\\)"', msg):
+            msg = match[1]
         return msg
 
     @classmethod
@@ -284,25 +283,21 @@ class HiveEngineSpec(PrestoEngineSpec):
         current_job = 1
         stages: Dict[int, float] = {}
         for line in log_lines:
-            match = cls.jobs_stats_r.match(line)
-            if match:
+            if match := cls.jobs_stats_r.match(line):
                 total_jobs = int(match.groupdict()["max_jobs"]) or 1
-            match = cls.launching_job_r.match(line)
-            if match:
+            if match := cls.launching_job_r.match(line):
                 current_job = int(match.groupdict()["job_number"])
                 total_jobs = int(match.groupdict()["max_jobs"]) or 1
                 stages = {}
-            match = cls.stage_progress_r.match(line)
-            if match:
+            if match := cls.stage_progress_r.match(line):
                 stage_number = int(match.groupdict()["stage_number"])
                 map_progress = int(match.groupdict()["map_progress"])
                 reduce_progress = int(match.groupdict()["reduce_progress"])
                 stages[stage_number] = (map_progress + reduce_progress) / 2
         logger.info(
-            "Progress detail: {}, "  # pylint: disable=logging-format-interpolation
-            "current job {}, "
-            "total jobs: {}".format(stages, current_job, total_jobs)
+            f"Progress detail: {stages}, current job {current_job}, total jobs: {total_jobs}"
         )
+
 
         stage_progress = sum(stages.values()) / len(stages.values()) if stages else 0
 
@@ -312,10 +307,7 @@ class HiveEngineSpec(PrestoEngineSpec):
     @classmethod
     def get_tracking_url(cls, log_lines: List[str]) -> Optional[str]:
         lkp = "Tracking URL = "
-        for line in log_lines:
-            if lkp in line:
-                return line.split(lkp)[1]
-        return None
+        return next((line.split(lkp)[1] for line in log_lines if lkp in line), None)
 
     @classmethod
     def handle_cursor(  # pylint: disable=too-many-locals
@@ -432,12 +424,14 @@ class HiveEngineSpec(PrestoEngineSpec):
     @classmethod
     def _latest_partition_from_df(cls, df: pd.DataFrame) -> Optional[List[str]]:
         """Hive partitions look like ds={partition name}/ds={partition name}"""
-        if not df.empty:
-            return [
+        return (
+            None
+            if df.empty
+            else [
                 partition_str.split("=")[1]
                 for partition_str in df.iloc[:, 0].max().split("/")
             ]
-        return None
+        )
 
     @classmethod
     def _partition_query(  # pylint: disable=too-many-arguments
@@ -544,11 +538,7 @@ class HiveEngineSpec(PrestoEngineSpec):
             exc_info=True,
         )
         # if the results have a single column, use that
-        if len(columns) == 1:
-            return df[columns[0]].tolist()
-
-        # otherwise, return no function names to prevent errors
-        return []
+        return df[columns[0]].tolist() if len(columns) == 1 else []
 
     @classmethod
     def is_readonly_query(cls, parsed_query: ParsedQuery) -> bool:

@@ -89,5 +89,5 @@ class FilterSetPutSchema(FilterSetSchema):
 def validate_pair(first_field: str, second_field: str, data: Dict[str, Any]) -> None:
     if first_field in data and second_field not in data:
         raise ValidationError(
-            "{} must be included alongside {}".format(first_field, second_field)
+            f"{first_field} must be included alongside {second_field}"
         )

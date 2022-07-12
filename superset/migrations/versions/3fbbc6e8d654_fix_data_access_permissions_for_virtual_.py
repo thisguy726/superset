@@ -122,7 +122,7 @@ class Database(Base):  # pylint: disable=too-many-public-methods
 
     @property
     def name(self) -> str:
-        return self.verbose_name if self.verbose_name else self.database_name
+        return self.verbose_name or self.database_name
 
 
 class SqlaTable(Base):
@@ -166,28 +166,22 @@ def upgrade():
     )
     orphaned_faulty_view_menus = []
     for faulty_view_menu in faulty_view_menus:
-        # Get the dataset id from the view_menu name
-        match_ds_id = re.match("\[None\]\.\[.*\]\(id:(\d+)\)", faulty_view_menu.name)
-        if match_ds_id:
-            dataset_id = int(match_ds_id.group(1))
-            dataset = session.query(SqlaTable).get(dataset_id)
-            if dataset:
+        if match_ds_id := re.match(
+            "\[None\]\.\[.*\]\(id:(\d+)\)", faulty_view_menu.name
+        ):
+            dataset_id = int(match_ds_id[1])
+            if dataset := session.query(SqlaTable).get(dataset_id):
                 try:
                     new_view_menu = dataset.get_perm()
                 except Exception:
                     # This can fail on differing SECRET_KEYS
                     return
-                existing_view_menu = (
+                if existing_view_menu := (
                     session.query(ViewMenu)
                     .filter(ViewMenu.name == new_view_menu)
                     .one_or_none()
-                )
-                # A view_menu permission with the right name already exists,
-                # so delete the faulty one later
-                if existing_view_menu:
+                ):
                     orphaned_faulty_view_menus.append(faulty_view_menu)
-                # No view_menu permission with this name exists
-                # so safely change this one
                 else:
                     faulty_view_menu.name = new_view_menu
     # Commit all view_menu updates
@@ -198,12 +192,11 @@ def upgrade():
 
     # Delete all orphaned faulty permissions
     for orphaned_faulty_view_menu in orphaned_faulty_view_menus:
-        pvm = (
+        if pvm := (
             session.query(PermissionView)
             .filter(PermissionView.view_menu == orphaned_faulty_view_menu)
             .one_or_none()
-        )
-        if pvm:
+        ):
             # Removes orphaned pvm from all roles
             roles = session.query(Role).filter(Role.permissions.contains(pvm)).all()
             for role in roles:

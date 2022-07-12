@@ -92,9 +92,12 @@ class SupersetResultSet:
 
             # fix cursor descriptor with the deduped names
             deduped_cursor_desc = [
-                tuple([column_name, *list(description)[1:]])
-                for column_name, description in zip(column_names, cursor_description)
+                (column_name, *list(description)[1:])
+                for column_name, description in zip(
+                    column_names, cursor_description
+                )
             ]
+
 
             # generate numpy structured array dtype
             numpy_dtype = [(column_name, "object") for column_name in column_names]
@@ -168,9 +171,7 @@ class SupersetResultSet:
             return "FLOAT"
         if pa.types.is_string(pa_dtype):
             return "STRING"
-        if pa.types.is_temporal(pa_dtype):
-            return "DATETIME"
-        return None
+        return "DATETIME" if pa.types.is_temporal(pa_dtype) else None
 
     @staticmethod
     def convert_table_to_df(table: pa.Table) -> pd.DataFrame:
@@ -182,18 +183,14 @@ class SupersetResultSet:
 
     def is_temporal(self, db_type_str: Optional[str]) -> bool:
         column_spec = self.db_engine_spec.get_column_spec(db_type_str)
-        if column_spec is None:
-            return False
-        return column_spec.is_dttm
+        return False if column_spec is None else column_spec.is_dttm
 
     def data_type(self, col_name: str, pa_dtype: pa.DataType) -> Optional[str]:
         """Given a pyarrow data type, Returns a generic database type"""
-        set_type = self._type_dict.get(col_name)
-        if set_type:
+        if set_type := self._type_dict.get(col_name):
             return set_type
 
-        mapped_type = self.convert_pa_dtype(pa_dtype)
-        if mapped_type:
+        if mapped_type := self.convert_pa_dtype(pa_dtype):
             return mapped_type
 
         return None

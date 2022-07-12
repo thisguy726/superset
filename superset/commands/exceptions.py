@@ -26,9 +26,7 @@ class CommandException(SupersetException):
     """ Common base class for Command exceptions. """
 
     def __repr__(self) -> str:
-        if self._exception:
-            return repr(self._exception)
-        return repr(self)
+        return repr(self._exception) if self._exception else repr(self)
 
 
 class ObjectNotFoundError(CommandException):
@@ -69,7 +67,7 @@ class CommandInvalidError(CommandException):
     def normalized_messages(self) -> Dict[Any, Any]:
         errors: Dict[Any, Any] = {}
         for exception in self._invalid_exceptions:
-            errors.update(exception.normalized_messages())
+            errors |= exception.normalized_messages()
         return errors
 
 

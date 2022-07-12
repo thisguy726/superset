@@ -119,7 +119,7 @@ class SnowflakeEngineSpec(PostgresBaseEngineSpec):
             database = uri.database.split("/")[0]
         if selected_schema:
             selected_schema = parse.quote(selected_schema, safe="")
-            uri.database = database + "/" + selected_schema
+            uri.database = f"{database}/{selected_schema}"
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
@@ -245,9 +245,7 @@ class SnowflakeEngineSpec(PostgresBaseEngineSpec):
             "password",
         }
         present = {key for key in parameters if parameters.get(key, ())}
-        missing = sorted(required - present)
-
-        if missing:
+        if missing := sorted(required - present):
             errors.append(
                 SupersetError(
                     message=f'One or more parameters are missing: {", ".join(missing)}',

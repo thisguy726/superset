@@ -53,16 +53,18 @@ def update_slice_ids(layout_dict: Dict[Any, Any], slices: List[Slice]) -> None:
 
 
 def merge_slice(slc: Slice) -> None:
-    o = db.session.query(Slice).filter_by(slice_name=slc.slice_name).first()
-    if o:
+    if (
+        o := db.session.query(Slice)
+        .filter_by(slice_name=slc.slice_name)
+        .first()
+    ):
         db.session.delete(o)
     db.session.add(slc)
     db.session.commit()
 
 
 def get_slice_json(defaults: Dict[Any, Any], **kwargs: Any) -> str:
-    defaults_copy = defaults.copy()
-    defaults_copy.update(kwargs)
+    defaults_copy = defaults | kwargs
     return json.dumps(defaults_copy, indent=4, sort_keys=True)
 
 

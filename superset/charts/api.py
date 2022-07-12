@@ -90,9 +90,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
 
     @before_request(only=["thumbnail", "screenshot", "cache_screenshot"])
     def ensure_thumbnails_enabled(self) -> Optional[Response]:
-        if not is_feature_enabled("THUMBNAILS"):
-            return self.response_404()
-        return None
+        return None if is_feature_enabled("THUMBNAILS") else self.response_404()
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.EXPORT,
@@ -605,20 +603,21 @@ class ChartRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
-        chart = self.datamodel.get(pk, self._base_filters)
-
-        # Making sure the chart still exists
-        if not chart:
-            return self.response_404()
-
-        # fetch the chart screenshot using the current user and cache if set
-        img = ChartScreenshot.get_from_cache_key(thumbnail_cache, digest)
-        if img:
-            return Response(
-                FileWrapper(img), mimetype="image/png", direct_passthrough=True
+        if chart := self.datamodel.get(pk, self._base_filters):
+            return (
+                Response(
+                    FileWrapper(img), mimetype="image/png", direct_passthrough=True
+                )
+                if (
+                    img := ChartScreenshot.get_from_cache_key(
+                        thumbnail_cache, digest
+                    )
+                )
+                else self.response_404()
             )
-        # TODO: return an empty image
-        return self.response_404()
+
+        else:
+            return self.response_404()
 
     @expose("/<pk>/thumbnail/<digest>/", methods=["GET"])
     @protect()

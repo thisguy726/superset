@@ -76,9 +76,12 @@ class KeyValueRestApi(BaseApi, ABC):
         try:
             item = self.edit_model_schema.load(request.json)
             result = self.get_update_command()(g.user, pk, key, item["value"]).run()
-            if not result:
-                return self.response_404()
-            return self.response(200, message="Value updated successfully.")
+            return (
+                self.response(200, message="Value updated successfully.")
+                if result
+                else self.response_404()
+            )
+
         except ValidationError as error:
             return self.response_400(message=error.messages)
         except (DashboardAccessDeniedError, KeyValueAccessDeniedError):
@@ -89,9 +92,7 @@ class KeyValueRestApi(BaseApi, ABC):
     def get(self, pk: int, key: str) -> Response:
         try:
             value = self.get_get_command()(g.user, pk, key).run()
-            if not value:
-                return self.response_404()
-            return self.response(200, value=value)
+            return self.response(200, value=value) if value else self.response_404()
         except (DashboardAccessDeniedError, KeyValueAccessDeniedError):
             return self.response_403()
         except DashboardNotFoundError:
@@ -100,9 +101,12 @@ class KeyValueRestApi(BaseApi, ABC):
     def delete(self, pk: int, key: str) -> Response:
         try:
             result = self.get_delete_command()(g.user, pk, key).run()
-            if not result:
-                return self.response_404()
-            return self.response(200, message="Deleted successfully")
+            return (
+                self.response(200, message="Deleted successfully")
+                if result
+                else self.response_404()
+            )
+
         except (DashboardAccessDeniedError, KeyValueAccessDeniedError):
             return self.response_403()
         except DashboardNotFoundError:

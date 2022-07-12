@@ -871,9 +871,14 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
               $ref: '#/components/responses/500'
         """
         database = DatabaseDAO.find_by_id(pk)
-        if not database:
-            return self.response_404()
-        return self.response(200, function_names=database.function_names,)
+        return (
+            self.response(
+                200,
+                function_names=database.function_names,
+            )
+            if database
+            else self.response_404()
+        )
 
     @expose("/available/", methods=["GET"])
     @protect()

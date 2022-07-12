@@ -50,7 +50,7 @@ def upgrade():
     for table, column in names.items():
         with op.batch_alter_table(table, naming_convention=conv) as batch_op:
             batch_op.create_unique_constraint(
-                "uq_{}_{}".format(table, column), [column, "datasource_id"]
+                f"uq_{table}_{column}", [column, "datasource_id"]
             )
 
 
@@ -72,7 +72,9 @@ def downgrade():
     for table, column in names.items():
         with op.batch_alter_table(table, naming_convention=conv) as batch_op:
             batch_op.drop_constraint(
-                generic_find_uq_constraint_name(table, {column, "datasource_id"}, insp)
-                or "uq_{}_{}".format(table, column),
+                generic_find_uq_constraint_name(
+                    table, {column, "datasource_id"}, insp
+                )
+                or f"uq_{table}_{column}",
                 type_="unique",
             )

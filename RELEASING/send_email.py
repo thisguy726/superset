@@ -39,9 +39,7 @@ PROJECT_DESCRIPTION = "Apache Superset is a modern, enterprise-ready business in
 
 
 def string_comma_to_list(message: str) -> List[str]:
-    if not message:
-        return []
-    return [element.strip() for element in message.split(",")]
+    return [element.strip() for element in message.split(",")] if message else []
 
 
 def send_email(

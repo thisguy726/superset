@@ -222,8 +222,9 @@ def migrate_roles(
     # Collect a map of PermissionView objects for migration
     pvm_map: Dict[PermissionView, List[PermissionView]] = {}
     for old_pvm_key, new_pvms_ in pvm_key_map.items():
-        old_pvm = _find_pvm(session, old_pvm_key.view, old_pvm_key.permission)
-        if old_pvm:
+        if old_pvm := _find_pvm(
+            session, old_pvm_key.view, old_pvm_key.permission
+        ):
             for new_pvm_key in new_pvms_:
                 new_pvm = _find_pvm(session, new_pvm_key.view, new_pvm_key.permission)
                 if old_pvm not in pvm_map:

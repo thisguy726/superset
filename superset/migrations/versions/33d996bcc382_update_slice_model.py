@@ -67,7 +67,7 @@ def downgrade():
     for slc in session.query(Slice).all():
         if slc.datasource_type == "druid":
             slc.druid_datasource_id = slc.datasource_id
-        if slc.datasource_type == "table":
+        elif slc.datasource_type == "table":
             slc.table_id = slc.datasource_id
         session.merge(slc)
         session.commit()

@@ -56,14 +56,13 @@ def _extract_limit_from_query(statement: TokenList) -> Optional[int]:
     idx, _ = statement.token_next_by(m=(Keyword, "LIMIT"))
     if idx is not None:
         _, token = statement.token_next(idx=idx)
-        if token:
-            if isinstance(token, IdentifierList):
-                # In case of "LIMIT <offset>, <limit>", find comma and extract
-                # first succeeding non-whitespace token
-                idx, _ = token.token_next_by(m=(sqlparse.tokens.Punctuation, ","))
-                _, token = token.token_next(idx=idx)
-            if token and token.ttype == sqlparse.tokens.Literal.Number.Integer:
-                return int(token.value)
+        if token and isinstance(token, IdentifierList):
+            # In case of "LIMIT <offset>, <limit>", find comma and extract
+            # first succeeding non-whitespace token
+            idx, _ = token.token_next_by(m=(sqlparse.tokens.Punctuation, ","))
+            _, token = token.token_next(idx=idx)
+        if token and token.ttype == sqlparse.tokens.Literal.Number.Integer:
+            return int(token.value)
     return None
 
 
@@ -203,8 +202,7 @@ class ParsedQuery:
         statements = []
         for statement in self._parsed:
             if statement:
-                sql = str(statement).strip(" \n;\t")
-                if sql:
+                if sql := str(statement).strip(" \n;\t"):
                     statements.append(sql)
         return statements
 
@@ -230,7 +228,7 @@ class ParsedQuery:
         tokens = tlist.tokens[:idx]
 
         if (
-            len(tokens) in (1, 3, 5)
+            len(tokens) in {1, 3, 5}
             and all(imt(token, t=[Name, String]) for token in tokens[::2])
             and all(imt(token, m=(Punctuation, ".")) for token in tokens[1::2])
         ):
@@ -281,12 +279,10 @@ class ParsedQuery:
         :param method: method for the CTA query, currently view or table creation
         :return: Create table as query
         """
-        exec_sql = ""
         sql = self.stripped()
         # TODO(bkyryliuk): quote full_table_name
         full_table_name = f"{schema_name}.{table_name}" if schema_name else table_name
-        if overwrite:
-            exec_sql = f"DROP {method} IF EXISTS {full_table_name};\n"
+        exec_sql = f"DROP {method} IF EXISTS {full_table_name};\n" if overwrite else ""
         exec_sql += f"CREATE {method} {full_table_name} AS \n{sql}"
         return exec_sql
 
@@ -360,13 +356,16 @@ class ParsedQuery:
         """
         if not self._limit:
             return f"{self.stripped()}\nLIMIT {new_limit}"
-        limit_pos = None
         statement = self._parsed[0]
-        # Add all items to before_str until there is a limit
-        for pos, item in enumerate(statement.tokens):
-            if item.ttype in Keyword and item.value.lower() == "limit":
-                limit_pos = pos
-                break
+        limit_pos = next(
+            (
+                pos
+                for pos, item in enumerate(statement.tokens)
+                if item.ttype in Keyword and item.value.lower() == "limit"
+            ),
+            None,
+        )
+
         _, limit = statement.token_next(idx=limit_pos)
         # Override the limit only when it exceeds the configured value.
         if limit.ttype == sqlparse.tokens.Literal.Number.Integer and (
@@ -376,10 +375,7 @@ class ParsedQuery:
         elif limit.is_group:
             limit.value = f"{next(limit.get_identifiers())}, {new_limit}"
 
-        str_res = ""
-        for i in statement.tokens:
-            str_res += str(i.value)
-        return str_res
+        return "".join(str(i.value) for i in statement.tokens)
 
 
 def validate_filter_clause(clause: str) -> None:

@@ -75,10 +75,11 @@ db_engine_specs_map = {
 
 def isodate_duration_to_string(obj):
     if obj.tdelta:
-        if not obj.months and not obj.years:
-            return format_seconds(obj.tdelta.total_seconds())
-        raise Exception("Unable to convert: {0}".format(obj))
+        if obj.months or obj.years:
+            raise Exception("Unable to convert: {0}".format(obj))
 
+        else:
+            return format_seconds(obj.tdelta.total_seconds())
     if obj.months % 12 != 0:
         months = obj.months + 12 * obj.years
         return "{0} months".format(months)

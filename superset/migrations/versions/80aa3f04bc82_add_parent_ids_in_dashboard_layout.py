@@ -68,10 +68,9 @@ def upgrade():
     dashboards = session.query(Dashboard).all()
     for i, dashboard in enumerate(dashboards):
         print(
-            "adding parents for dashboard layout, id = {} ({}/{}) >>>>".format(
-                dashboard.id, i + 1, len(dashboards)
-            )
+            f"adding parents for dashboard layout, id = {dashboard.id} ({i + 1}/{len(dashboards)}) >>>>"
         )
+
         try:
             layout = json.loads(dashboard.position_json or "{}")
             if layout and layout["ROOT_ID"]:
@@ -95,10 +94,9 @@ def downgrade():
     dashboards = session.query(Dashboard).all()
     for i, dashboard in enumerate(dashboards):
         print(
-            "remove parents from dashboard layout, id = {} ({}/{}) >>>>".format(
-                dashboard.id, i + 1, len(dashboards)
-            )
+            f"remove parents from dashboard layout, id = {dashboard.id} ({i + 1}/{len(dashboards)}) >>>>"
         )
+
         try:
             layout = json.loads(dashboard.position_json or "{}")
             for key, item in layout.items():

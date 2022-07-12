@@ -27,8 +27,7 @@ from superset.models.slice import Slice
 def import_chart(
     session: Session, config: Dict[str, Any], overwrite: bool = False
 ) -> Slice:
-    existing = session.query(Slice).filter_by(uuid=config["uuid"]).first()
-    if existing:
+    if existing := session.query(Slice).filter_by(uuid=config["uuid"]).first():
         if not overwrite:
             return existing
         config["id"] = existing.id

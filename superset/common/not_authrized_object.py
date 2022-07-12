@@ -35,5 +35,5 @@ class NotAuthorizedException(SupersetException):
         self, what_not_authorized: str = "", exception: Optional[Exception] = None
     ) -> None:
         super().__init__(
-            "The user is not authorized to " + what_not_authorized, exception
+            f"The user is not authorized to {what_not_authorized}", exception
         )

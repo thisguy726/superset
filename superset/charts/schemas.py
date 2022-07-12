@@ -521,6 +521,8 @@ class ChartDataContributionOptionsSchema(ChartDataPostProcessingOperationOptions
     )
 
 
+
+
 class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchema):
     """
     Prophet operation config.
@@ -533,13 +535,14 @@ class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
         validate=validate.OneOf(
             choices=[
                 i
-                for i in {**builtin_time_grains, **config["TIME_GRAIN_ADDONS"]}.keys()
+                for i in {**builtin_time_grains, **config["TIME_GRAIN_ADDONS"]}
                 if i
             ]
         ),
         example="P1D",
         required=True,
     )
+
     periods = fields.Integer(
         descrption="Time periods (in units of `time_grain`) to predict into the future",
         min=0,
@@ -581,6 +584,7 @@ class ChartDataProphetOptionsSchema(ChartDataPostProcessingOperationOptionsSchem
         "automatically detect seasonality.",
         example=False,
     )
+
 
 
 class ChartDataBoxplotOptionsSchema(ChartDataPostProcessingOperationOptionsSchema):
@@ -817,6 +821,8 @@ class ChartDataFilterSchema(Schema):
     )
 
 
+
+
 class ChartDataExtrasSchema(Schema):
 
     time_range_endpoints = fields.List(EnumField(TimeRangeEndpoint, by_value=True))
@@ -848,18 +854,20 @@ class ChartDataExtrasSchema(Schema):
         validate=validate.OneOf(
             choices=[
                 i
-                for i in {**builtin_time_grains, **config["TIME_GRAIN_ADDONS"]}.keys()
+                for i in {**builtin_time_grains, **config["TIME_GRAIN_ADDONS"]}
                 if i
             ]
         ),
         example="P1D",
         allow_none=True,
     )
+
     druid_time_origin = fields.String(
         description="Starting point for time grain counting on legacy Druid "
         "datasources. Used to change e.g. Monday/Sunday first-day-of-week.",
         allow_none=True,
     )
+
 
 
 class AnnotationLayerSchema(Schema):
@@ -1165,8 +1173,7 @@ class ChartDataQueryContextSchema(Schema):
     # pylint: disable=unused-argument
     @post_load
     def make_query_context(self, data: Dict[str, Any], **kwargs: Any) -> QueryContext:
-        query_context = self.get_query_context_factory().create(**data)
-        return query_context
+        return self.get_query_context_factory().create(**data)
 
     def get_query_context_factory(self) -> QueryContextFactory:
         if self.query_context_factory is None:

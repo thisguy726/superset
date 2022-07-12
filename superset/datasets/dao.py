@@ -190,9 +190,7 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
         """
         new_columns = []
         for column in property_columns:
-            column_id = column.get("id")
-
-            if column_id:
+            if column_id := column.get("id"):
                 column_obj = db.session.query(TableColumn).get(column_id)
                 column_obj = DatasetDAO.update_column(column_obj, column, commit=commit)
             else:
@@ -242,12 +240,16 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
     ) -> Optional[TableColumn]:
         # We want to apply base dataset filters
         dataset = DatasetDAO.find_by_id(dataset_id)
-        if not dataset:
-            return None
         return (
-            db.session.query(TableColumn)
-            .filter(TableColumn.table_id == dataset_id, TableColumn.id == column_id)
-            .one_or_none()
+            (
+                db.session.query(TableColumn)
+                .filter(
+                    TableColumn.table_id == dataset_id, TableColumn.id == column_id
+                )
+                .one_or_none()
+            )
+            if dataset
+            else None
         )
 
     @classmethod
@@ -280,9 +282,7 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
     ) -> Optional[SqlMetric]:
         # We want to apply base dataset filters
         dataset = DatasetDAO.find_by_id(dataset_id)
-        if not dataset:
-            return None
-        return db.session.query(SqlMetric).get(metric_id)
+        return db.session.query(SqlMetric).get(metric_id) if dataset else None
 
     @classmethod
     def delete_metric(

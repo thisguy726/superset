@@ -76,8 +76,7 @@ def list_runs(
             params={**params, "per_page": 100, "page": page},
         )
         total_count = result["total_count"]
-        for item in result["workflow_runs"]:
-            yield item
+        yield from result["workflow_runs"]
         page += 1
 
 

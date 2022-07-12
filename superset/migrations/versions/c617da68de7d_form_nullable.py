@@ -178,9 +178,8 @@ def upgrade():
     for table in tables:
         for record in session.query(table).all():
             for col in record.__table__.columns.values():
-                if not col.primary_key:
-                    if getattr(record, col.name) == "":
-                        setattr(record, col.name, None)
+                if not col.primary_key and getattr(record, col.name) == "":
+                    setattr(record, col.name, None)
 
         session.commit()
 

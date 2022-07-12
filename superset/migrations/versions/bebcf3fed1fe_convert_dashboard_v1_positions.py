@@ -22,6 +22,7 @@ Create Date: 2018-07-22 11:59:07.025119
 
 """
 
+
 # revision identifiers, used by Alembic.
 import collections
 import json
@@ -62,7 +63,7 @@ NUMBER_OF_CHARTS_PER_ROW = 3
 MAX_RECURSIVE_LEVEL = 6
 ROW_HEIGHT = 8
 TOTAL_COLUMNS = 48
-DEFAULT_CHART_WIDTH = int(TOTAL_COLUMNS / NUMBER_OF_CHARTS_PER_ROW)
+DEFAULT_CHART_WIDTH = TOTAL_COLUMNS // NUMBER_OF_CHARTS_PER_ROW
 MAX_VALUE = sys.maxsize
 
 
@@ -173,7 +174,7 @@ def get_header_component(title):
 def get_row_container():
     return {
         "type": ROW_TYPE,
-        "id": "DASHBOARD_ROW_TYPE-{}".format(generate_id()),
+        "id": f"DASHBOARD_ROW_TYPE-{generate_id()}",
         "children": [],
         "meta": {"background": BACKGROUND_TRANSPARENT},
     }
@@ -182,7 +183,7 @@ def get_row_container():
 def get_col_container():
     return {
         "type": COLUMN_TYPE,
-        "id": "DASHBOARD_COLUMN_TYPE-{}".format(generate_id()),
+        "id": f"DASHBOARD_COLUMN_TYPE-{generate_id()}",
         "children": [],
         "meta": {"background": BACKGROUND_TRANSPARENT},
     }
@@ -204,25 +205,30 @@ def get_chart_holder(position):
         if len(code):
             markdown_content = code
         elif slice_name.strip():
-            markdown_content = "##### {}".format(slice_name)
+            markdown_content = f"##### {slice_name}"
 
         return {
             "type": MARKDOWN_TYPE,
-            "id": "DASHBOARD_MARKDOWN_TYPE-{}".format(generate_id()),
+            "id": f"DASHBOARD_MARKDOWN_TYPE-{generate_id()}",
             "children": [],
-            "meta": {"width": width, "height": height, "code": markdown_content},
+            "meta": {
+                "width": width,
+                "height": height,
+                "code": markdown_content,
+            },
         }
+
 
     return {
         "type": CHART_TYPE,
-        "id": "DASHBOARD_CHART_TYPE-{}".format(generate_id()),
+        "id": f"DASHBOARD_CHART_TYPE-{generate_id()}",
         "children": [],
         "meta": {"width": width, "height": height, "chartId": int(slice_id)},
     }
 
 
 def get_children_max(children, attr, root):
-    return max([root[childId]["meta"][attr] for childId in children])
+    return max(root[childId]["meta"][attr] for childId in children)
 
 
 def get_children_sum(children, attr, root):
@@ -249,19 +255,13 @@ def can_reduce_column_width(column_component, root):
         column_component["type"] == COLUMN_TYPE
         and column_component["meta"]["width"] > GRID_MIN_COLUMN_COUNT
         and all(
-            [
-                is_wide_leaf_component(root[childId])
-                or (
-                    root[childId]["type"] == ROW_TYPE
-                    and all(
-                        [
-                            is_wide_leaf_component(root[id])
-                            for id in root[childId]["children"]
-                        ]
-                    )
-                )
-                for childId in column_component["children"]
-            ]
+            is_wide_leaf_component(root[childId])
+            or root[childId]["type"] == ROW_TYPE
+            and all(
+                is_wide_leaf_component(root[id])
+                for id in root[childId]["children"]
+            )
+            for childId in column_component["children"]
         )
     )
 
@@ -507,7 +507,7 @@ def merge_position(position, bottom_line, last_column_start):
 
     current_row_value = bottom_line[col]
     # if no enough space to fit current position, will start from taller row value
-    if len(taller_indexes) > 0 and (taller_indexes[0] - col + 1) < size_x:
+    if taller_indexes and (taller_indexes[0] - col + 1) < size_x:
         current_row_value = max(bottom_line[col : col + size_x])
 
     # add current row value with size_y of this position
@@ -535,13 +535,10 @@ def scan_dashboard_positions_data(positions):
     bottom_line = [0] * (TOTAL_COLUMNS + 1)
     # col index always starts from 1, set a large number for [0] as placeholder
     bottom_line[0] = MAX_VALUE
-    last_column_start = max([position["col"] for position in positions])
+    last_column_start = max(position["col"] for position in positions)
 
-    # ordered_raw_positions are arrays of raw positions data sorted by row id
-    ordered_raw_positions = []
     row_ids = sorted(positions_by_row_id.keys())
-    for row_id in row_ids:
-        ordered_raw_positions.append(positions_by_row_id[row_id])
+    ordered_raw_positions = [positions_by_row_id[row_id] for row_id in row_ids]
     updated_positions = []
 
     while len(ordered_raw_positions):
@@ -585,10 +582,10 @@ def upgrade():
 
     dashboards = session.query(Dashboard).all()
     for i, dashboard in enumerate(dashboards):
-        print("scanning dashboard ({}/{}) >>>>".format(i + 1, len(dashboards)))
+        print(f"scanning dashboard ({i + 1}/{len(dashboards)}) >>>>")
         position_json = json.loads(dashboard.position_json or "[]")
         if not is_v2_dash(position_json):
-            print("Converting dashboard... dash_id: {}".format(dashboard.id))
+            print(f"Converting dashboard... dash_id: {dashboard.id}")
             position_dict = {}
             positions = []
             slices = dashboard.slices
@@ -601,10 +598,11 @@ def upgrade():
                 }
 
             last_row_id = (
-                max([pos["row"] + pos["size_y"] for pos in position_json])
+                max(pos["row"] + pos["size_y"] for pos in position_json)
                 if position_json
                 else 0
             )
+
             new_slice_counter = 0
             for slice in slices:
                 position = position_dict.get(str(slice.id))
@@ -651,7 +649,7 @@ def upgrade():
             session.merge(dashboard)
             session.commit()
         else:
-            print("Skip converted dash_id: {}".format(dashboard.id))
+            print(f"Skip converted dash_id: {dashboard.id}")
 
     session.close()
 

@@ -91,13 +91,12 @@ class PinotEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
         else:
             seconds_or_ms = "MILLISECONDS" if pdf == "epoch_ms" else "SECONDS"
             tf = f"1:{seconds_or_ms}:EPOCH"
-        if time_grain:
-            granularity = cls.get_time_grain_expressions().get(time_grain)
-            if not granularity:
-                raise NotImplementedError(f"No pinot grain spec for '{time_grain}'")
-        else:
+        if not time_grain:
             return TimestampExpression("{{col}}", col)
 
+        granularity = cls.get_time_grain_expressions().get(time_grain)
+        if not granularity:
+            raise NotImplementedError(f"No pinot grain spec for '{time_grain}'")
         # In pinot the output is a string since there is no timestamp column like pg
         if cls._use_date_trunc_function.get(time_grain):
             if is_epoch:

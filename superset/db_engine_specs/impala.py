@@ -57,9 +57,8 @@ class ImpalaEngineSpec(BaseEngineSpec):
 
     @classmethod
     def get_schema_names(cls, inspector: Inspector) -> List[str]:
-        schemas = [
+        return [
             row[0]
             for row in inspector.engine.execute("SHOW SCHEMAS")
             if not row[0].startswith("_")
         ]
-        return schemas

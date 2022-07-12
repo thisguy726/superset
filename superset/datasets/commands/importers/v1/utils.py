@@ -59,8 +59,7 @@ def get_sqla_type(native_type: str) -> VisitableType:
     if native_type.upper() in type_map:
         return type_map[native_type.upper()]
 
-    match = VARCHAR.match(native_type)
-    if match:
+    if match := VARCHAR.match(native_type):
         size = int(match.group(1))
         return String(size)
 
@@ -81,8 +80,11 @@ def import_dataset(
     overwrite: bool = False,
     force_data: bool = False,
 ) -> SqlaTable:
-    existing = session.query(SqlaTable).filter_by(uuid=config["uuid"]).first()
-    if existing:
+    if (
+        existing := session.query(SqlaTable)
+        .filter_by(uuid=config["uuid"])
+        .first()
+    ):
         if not overwrite:
             return existing
         config["id"] = existing.id

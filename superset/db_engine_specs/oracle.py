@@ -72,6 +72,4 @@ class OracleEngineSpec(BaseEngineSpec):
         :param limit: Maximum number of rows to be returned by the cursor
         :return: Result of query
         """
-        if not cursor.description:
-            return []
-        return super().fetch_data(cursor, limit)
+        return super().fetch_data(cursor, limit) if cursor.description else []

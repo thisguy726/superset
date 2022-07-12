@@ -38,11 +38,9 @@ def upgrade():
 
     # Uniqueness constraint if present only exists in MySQL.
     if isinstance(bind.dialect, MySQLDialect):
-        constraint_name = generic_find_uq_constraint_name(
+        if constraint_name := generic_find_uq_constraint_name(
             "tables", {"table_name"}, Inspector.from_engine(bind)
-        )
-
-        if constraint_name:
+        ):
             op.drop_constraint(constraint_name, "tables", type_="unique")
 
 

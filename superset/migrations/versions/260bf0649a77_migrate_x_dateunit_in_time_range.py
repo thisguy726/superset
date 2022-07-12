@@ -83,9 +83,7 @@ def upgrade():
         total = slices.count()
         sep = " : "
         pattern = DateRangeMigration.x_dateunit
-        idx = 0
-        for slc in slices.yield_per(100):
-            idx += 1
+        for idx, slc in enumerate(slices.yield_per(100), start=1):
             print(f"Upgrading ({idx}/{total}): {slc.slice_name}#{slc.id}")
             params = json.loads(slc.params)
             time_range = params["time_range"]

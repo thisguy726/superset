@@ -60,13 +60,14 @@ class DeleteChartCommand(BaseCommand):
         self._model = ChartDAO.find_by_id(self._model_id)
         if not self._model:
             raise ChartNotFoundError()
-        # Check there are no associated ReportSchedules
-        reports = ReportScheduleDAO.find_by_chart_id(self._model_id)
-        if reports:
+        if reports := ReportScheduleDAO.find_by_chart_id(self._model_id):
             report_names = [report.name for report in reports]
             raise ChartDeleteFailedReportsExistError(
-                _("There are associated alerts or reports: %s" % ",".join(report_names))
+                _(
+                    f'There are associated alerts or reports: {",".join(report_names)}'
+                )
             )
+
         # Check ownership
         try:
             check_ownership(self._model)

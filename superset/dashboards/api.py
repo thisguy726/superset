@@ -93,9 +93,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
 
     @before_request(only=["thumbnail"])
     def ensure_thumbnails_enabled(self) -> Optional[Response]:
-        if not is_feature_enabled("THUMBNAILS"):
-            return self.response_404()
-        return None
+        return None if is_feature_enabled("THUMBNAILS") else self.response_404()
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.EXPORT,
@@ -222,10 +220,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
 
     def __repr__(self) -> str:
         """Deterministic string representation of the API instance for etag_cache."""
-        return "Superset.dashboards.api.DashboardRestApi@v{}{}".format(
-            self.appbuilder.app.config["VERSION_STRING"],
-            self.appbuilder.app.config["VERSION_SHA"],
-        )
+        return f'Superset.dashboards.api.DashboardRestApi@v{self.appbuilder.app.config["VERSION_STRING"]}{self.appbuilder.app.config["VERSION_SHA"]}'
 
     @etag_cache(
         get_last_modified=lambda _self, id_or_slug: DashboardDAO.get_dashboard_changed_on(  # pylint: disable=line-too-long,useless-suppression

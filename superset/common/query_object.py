@@ -220,8 +220,7 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
                     field.old_name,
                     field.new_name,
                 )
-                value = kwargs[field.old_name]
-                if value:
+                if value := kwargs[field.old_name]:
                     if hasattr(self, field.new_name):
                         logger.warning(
                             "The field `%s` is already populated, "
@@ -241,8 +240,7 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
                     field.old_name,
                     field.new_name,
                 )
-                value = kwargs[field.old_name]
-                if value:
+                if value := kwargs[field.old_name]:
                     if hasattr(self.extras, field.new_name):
                         logger.warning(
                             "The field `%s` is already populated in "
@@ -292,16 +290,16 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
 
     def _validate_filters(self) -> None:
         for param in ("where", "having"):
-            clause = self.extras.get(param)
-            if clause:
+            if clause := self.extras.get(param):
                 try:
                     validate_filter_clause(clause)
                 except QueryClauseValidationException as ex:
                     raise QueryObjectValidationError(ex.message) from ex
 
     def _validate_there_are_no_missing_series(self) -> None:
-        missing_series = [col for col in self.series_columns if col not in self.columns]
-        if missing_series:
+        if missing_series := [
+            col for col in self.series_columns if col not in self.columns
+        ]:
             raise QueryObjectValidationError(
                 _(
                     "The following entries in `series_columns` are missing "
@@ -311,7 +309,7 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
             )
 
     def to_dict(self) -> Dict[str, Any]:
-        query_object_dict = {
+        return {
             "apply_fetch_values_predicate": self.apply_fetch_values_predicate,
             "columns": self.columns,
             "extras": self.extras,
@@ -332,7 +330,6 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
             "series_limit_metric": self.series_limit_metric,
             "to_dttm": self.to_dttm,
         }
-        return query_object_dict
 
     def cache_key(self, **extra: Any) -> str:
         """
@@ -375,12 +372,10 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
             "titleColumn",
             "value",
         ]
-        annotation_layers = [
+        if annotation_layers := [
             {field: layer[field] for field in annotation_fields if field in layer}
             for layer in self.annotation_layers
-        ]
-        # only add to key if there are annotations present that affect the payload
-        if annotation_layers:
+        ]:
             cache_dict["annotation_layers"] = annotation_layers
 
         return md5_sha_from_dict(cache_dict, default=json_int_dttm_ser, ignore_nan=True)

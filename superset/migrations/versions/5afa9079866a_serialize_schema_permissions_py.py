@@ -75,11 +75,7 @@ def upgrade():
     bind = op.get_bind()
     session = db.Session(bind=bind)
     for t in session.query(Sqlatable).all():
-        db_name = (
-            t.database.verbose_name
-            if t.database.verbose_name
-            else t.database.database_name
-        )
+        db_name = t.database.verbose_name or t.database.database_name
         if t.schema:
             t.schema_perm = f"[{db_name}].[{t.schema}]"
             table_slices = (

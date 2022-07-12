@@ -172,7 +172,7 @@ class Database(
 
     @property
     def name(self) -> str:
-        return self.verbose_name if self.verbose_name else self.database_name
+        return self.verbose_name or self.database_name
 
     @property
     def allows_subquery(self) -> bool:
@@ -499,9 +499,11 @@ class Database(
         force: bool = False,
     ) -> List[utils.DatasourceName]:
         """Parameters need to be passed as keyword arguments."""
-        if not self.allow_multi_schema_metadata_fetch:
-            return []
-        return self.db_engine_spec.get_all_datasource_names(self, "table")
+        return (
+            self.db_engine_spec.get_all_datasource_names(self, "table")
+            if self.allow_multi_schema_metadata_fetch
+            else []
+        )
 
     @cache_util.memoized_func(
         key=lambda self, *args, **kwargs: f"db:{self.id}:schema:None:view_list",
@@ -514,9 +516,11 @@ class Database(
         force: bool = False,
     ) -> List[utils.DatasourceName]:
         """Parameters need to be passed as keyword arguments."""
-        if not self.allow_multi_schema_metadata_fetch:
-            return []
-        return self.db_engine_spec.get_all_datasource_names(self, "view")
+        return (
+            self.db_engine_spec.get_all_datasource_names(self, "view")
+            if self.allow_multi_schema_metadata_fetch
+            else []
+        )
 
     @cache_util.memoized_func(
         key=lambda self, schema, *args, **kwargs: f"db:{self.id}:schema:{schema}:table_list",  # pylint: disable=line-too-long,useless-suppression

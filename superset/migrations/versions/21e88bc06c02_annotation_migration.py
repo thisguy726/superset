@@ -51,22 +51,21 @@ def upgrade():
         or_(Slice.viz_type.like("line"), Slice.viz_type.like("bar"))
     ):
         params = json.loads(slc.params)
-        layers = params.get("annotation_layers", [])
-        if layers:
-            new_layers = []
-            for layer in layers:
-                new_layers.append(
-                    {
-                        "annotationType": "INTERVAL",
-                        "style": "solid",
-                        "name": "Layer {}".format(layer),
-                        "show": True,
-                        "overrides": {"since": None, "until": None},
-                        "value": layer,
-                        "width": 1,
-                        "sourceType": "NATIVE",
-                    }
-                )
+        if layers := params.get("annotation_layers", []):
+            new_layers = [
+                {
+                    "annotationType": "INTERVAL",
+                    "style": "solid",
+                    "name": f"Layer {layer}",
+                    "show": True,
+                    "overrides": {"since": None, "until": None},
+                    "value": layer,
+                    "width": 1,
+                    "sourceType": "NATIVE",
+                }
+                for layer in layers
+            ]
+
             params["annotation_layers"] = new_layers
             slc.params = json.dumps(params)
             session.merge(slc)
@@ -82,8 +81,7 @@ def downgrade():
         or_(Slice.viz_type.like("line"), Slice.viz_type.like("bar"))
     ):
         params = json.loads(slc.params)
-        layers = params.get("annotation_layers", [])
-        if layers:
+        if layers := params.get("annotation_layers", []):
             params["annotation_layers"] = [layer["value"] for layer in layers]
             slc.params = json.dumps(params)
             session.merge(slc)

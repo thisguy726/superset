@@ -26,8 +26,11 @@ from superset.models.core import Database
 def import_database(
     session: Session, config: Dict[str, Any], overwrite: bool = False
 ) -> Database:
-    existing = session.query(Database).filter_by(uuid=config["uuid"]).first()
-    if existing:
+    if (
+        existing := session.query(Database)
+        .filter_by(uuid=config["uuid"])
+        .first()
+    ):
         if not overwrite:
             return existing
         config["id"] = existing.id

@@ -41,7 +41,7 @@ def get_physical_table_metadata(
     db_engine_spec = database.db_engine_spec
     db_dialect = database.get_dialect()
     # ensure empty schema
-    _schema_name = schema_name if schema_name else None
+    _schema_name = schema_name or None
     # Table does not exist or is not visible to a connection.
 
     if not (

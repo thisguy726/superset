@@ -176,8 +176,7 @@ class GSheetsEngineSpec(SqliteEngineSpec):
             "gsheets://", service_account_info=encrypted_credentials, subject=subject,
         )
         conn = engine.connect()
-        idx = 0
-        for name, url in table_catalog.items():
+        for idx, (name, url) in enumerate(table_catalog.items()):
 
             if not name:
                 errors.append(
@@ -213,5 +212,4 @@ class GSheetsEngineSpec(SqliteEngineSpec):
                         extra={"catalog": {"idx": idx, "url": True}},
                     ),
                 )
-            idx += 1
         return errors

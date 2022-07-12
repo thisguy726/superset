@@ -39,8 +39,7 @@ def find_native_filter_datasets(metadata: Dict[str, Any]) -> Set[str]:
     for native_filter in metadata.get("native_filter_configuration", []):
         targets = native_filter.get("targets", [])
         for target in targets:
-            dataset_uuid = target.get("datasetUuid")
-            if dataset_uuid:
+            if dataset_uuid := target.get("datasetUuid"):
                 uuids.add(dataset_uuid)
     return uuids
 
@@ -130,8 +129,7 @@ def update_id_refs(  # pylint: disable=too-many-locals
     for native_filter in native_filter_configuration:
         targets = native_filter.get("targets", [])
         for target in targets:
-            dataset_uuid = target.pop("datasetUuid", None)
-            if dataset_uuid:
+            if dataset_uuid := target.pop("datasetUuid", None):
                 target["datasetId"] = dataset_info[dataset_uuid]["datasource_id"]
 
     return fixed
@@ -140,8 +138,11 @@ def update_id_refs(  # pylint: disable=too-many-locals
 def import_dashboard(
     session: Session, config: Dict[str, Any], overwrite: bool = False
 ) -> Dashboard:
-    existing = session.query(Dashboard).filter_by(uuid=config["uuid"]).first()
-    if existing:
+    if (
+        existing := session.query(Dashboard)
+        .filter_by(uuid=config["uuid"])
+        .first()
+    ):
         if not overwrite:
             return existing
         config["id"] = existing.id

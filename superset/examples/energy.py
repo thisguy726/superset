@@ -68,7 +68,7 @@ def load_energy(
     tbl.database = database
     tbl.filter_select_enabled = True
 
-    if not any(col.metric_name == "sum__value" for col in tbl.metrics):
+    if all(col.metric_name != "sum__value" for col in tbl.metrics):
         col = str(column("value").compile(db.engine))
         tbl.metrics.append(
             SqlMetric(metric_name="sum__value", expression=f"SUM({col})")

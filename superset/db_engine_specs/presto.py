@@ -336,9 +336,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                comma, whitespace)
         :return: list of strings after breaking it by the delimiter
         """
-        return re.split(
-            r"{}(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".format(delimiter), data_type
-        )
+        return re.split(f'{delimiter}(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)', data_type)
 
     @classmethod
     def _parse_structural_column(  # pylint: disable=too-many-locals
@@ -391,7 +389,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                                 field_info[1],
                                 field_info[0],
                             )
-                        if field_info[1] == "array" or field_info[1] == "row":
+                        if field_info[1] in ["array", "row"]:
                             stack.append((field_info[0], field_info[1]))
                             full_parent_path = cls._get_full_name(stack)
                             result.append(
@@ -399,9 +397,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                             )
                         else:  # otherwise this field is a basic data type
                             full_parent_path = cls._get_full_name(stack)
-                            column_name = "{}.{}".format(
-                                full_parent_path, field_info[0]
-                            )
+                            column_name = f"{full_parent_path}.{field_info[0]}"
                             result.append(
                                 cls._create_column_info(column_name, column_type)
                             )
@@ -411,11 +407,9 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                     # through the entire structural data type and can move on.
                     if not (inner_type.endswith("array") or inner_type.endswith("row")):
                         stack.pop()
-                # We have an array of row objects (i.e. array(row(...)))
                 elif inner_type in ("array", "row"):
                     # Push a dummy object to represent the structural data type
                     stack.append(("", inner_type))
-                # We have an array of a basic data types(i.e. array(varchar)).
                 elif stack:
                     # Because it is an array of a basic data type. We have finished
                     # parsing the structural data type and can move on.
@@ -441,9 +435,8 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         quote = inspector.engine.dialect.identifier_preparer.quote_identifier
         full_table = quote(table_name)
         if schema:
-            full_table = "{}.{}".format(quote(schema), full_table)
-        columns = inspector.bind.execute("SHOW COLUMNS FROM {}".format(full_table))
-        return columns
+            full_table = f"{quote(schema)}.{full_table}"
+        return inspector.bind.execute(f"SHOW COLUMNS FROM {full_table}")
 
     column_type_mappings = (
         (
@@ -607,7 +600,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             # quote each column name if it is not already quoted
             for index, col_name in enumerate(col_names):
                 if not cls._is_column_name_quoted(col_name):
-                    col_names[index] = '"{}"'.format(col_name)
+                    col_names[index] = f'"{col_name}"'
             quoted_col_name = ".".join(
                 col_name if cls._is_column_name_quoted(col_name) else f'"{col_name}"'
                 for col_name in col_names
@@ -666,21 +659,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         sql = f"EXPLAIN (TYPE IO, FORMAT JSON) {statement}"
         cursor.execute(sql)
 
-        # the output from Presto is a single column and a single row containing
-        # JSON:
-        #
-        #   {
-        #     ...
-        #     "estimate" : {
-        #       "outputRowCount" : 8.73265878E8,
-        #       "outputSizeInBytes" : 3.41425774958E11,
-        #       "cpuCost" : 3.41425774958E11,
-        #       "maxMemory" : 0.0,
-        #       "networkCost" : 3.41425774958E11
-        #     }
-        #   }
-        result = json.loads(cursor.fetchone()[0])
-        return result
+        return json.loads(cursor.fetchone()[0])
 
     @classmethod
     def query_cost_formatter(
@@ -759,20 +738,16 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         cls, database: "Database", datasource_type: str
     ) -> List[utils.DatasourceName]:
         datasource_df = database.get_df(
-            "SELECT table_schema, table_name FROM INFORMATION_SCHEMA.{}S "
-            "ORDER BY concat(table_schema, '.', table_name)".format(
-                datasource_type.upper()
-            ),
+            f"SELECT table_schema, table_name FROM INFORMATION_SCHEMA.{datasource_type.upper()}S ORDER BY concat(table_schema, '.', table_name)",
             None,
         )
-        datasource_names: List[utils.DatasourceName] = []
-        for _unused, row in datasource_df.iterrows():
-            datasource_names.append(
-                utils.DatasourceName(
-                    schema=row["table_schema"], table=row["table_name"]
-                )
+
+        return [
+            utils.DatasourceName(
+                schema=row["table_schema"], table=row["table_name"]
             )
-        return datasource_names
+            for _unused, row in datasource_df.iterrows()
+        ]
 
     @classmethod
     def expand_data(  # pylint: disable=too-many-locals
@@ -887,12 +862,11 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
     ) -> Dict[str, Any]:
         metadata = {}
 
-        indexes = database.get_indexes(table_name, schema_name)
-        if indexes:
+        if indexes := database.get_indexes(table_name, schema_name):
             cols = indexes[0].get("column_names", [])
             full_table_name = table_name
             if schema_name and "." not in table_name:
-                full_table_name = "{}.{}".format(schema_name, table_name)
+                full_table_name = f"{schema_name}.{table_name}"
             pql = cls._partition_query(full_table_name, database)
             col_names, latest_parts = cls.latest_partition(
                 table_name, schema_name, database, show_first=True
@@ -933,11 +907,8 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             sql = f"SHOW CREATE VIEW {schema}.{table}"
             try:
                 cls.execute(cursor, sql)
-                polled = cursor.poll()
-
-                while polled:
+                while polled := cursor.poll():
                     time.sleep(0.2)
-                    polled = cursor.poll()
             except DatabaseError:  # not a VIEW
                 return None
             rows = cls.fetch_data(cursor, 1)
@@ -951,12 +922,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             "poll_interval", current_app.config["PRESTO_POLL_INTERVAL"]
         )
         logger.info("Query %i: Polling the cursor for progress", query_id)
-        polled = cursor.poll()
-        # poll returns dict -- JSON status information or ``None``
-        # if the query is done
-        # https://github.com/dropbox/PyHive/blob/
-        # b34bdbf51378b3979eaf5eca9e956f06ddc36ca0/pyhive/presto.py#L178
-        while polled:
+        while polled := cursor.poll():
             # Update the object and wait for the kill signal.
             stats = polled.get("stats", {})
 
@@ -977,15 +943,14 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                 if total_splits and completed_splits:
                     progress = 100 * (completed_splits / total_splits)
                     logger.info(
-                        "Query {} progress: {} / {} "  # pylint: disable=logging-format-interpolation
-                        "splits".format(query_id, completed_splits, total_splits)
+                        f"Query {query_id} progress: {completed_splits} / {total_splits} splits"
                     )
+
                     if progress > query.progress:
                         query.progress = progress
                     session.commit()
             time.sleep(poll_interval)
             logger.info("Query %i: Polling the cursor for progress", query_id)
-            polled = cursor.poll()
 
     @classmethod
     def _extract_error_message(cls, ex: Exception) -> str:
@@ -995,11 +960,8 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             and isinstance(ex.orig[0], dict)  # type: ignore
         ):
             error_dict = ex.orig[0]  # type: ignore
-            return "{} at {}: {}".format(
-                error_dict.get("errorName"),
-                error_dict.get("errorLocation"),
-                error_dict.get("message"),
-            )
+            return f'{error_dict.get("errorName")} at {error_dict.get("errorLocation")}: {error_dict.get("message")}'
+
         if type(ex).__name__ == "DatabaseError" and hasattr(ex, "args") and ex.args:
             error_dict = ex.args[0]
             return error_dict.get("message", _("Unknown Presto Error"))
@@ -1026,19 +988,15 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         :type order_by: list of (str, bool) tuples
         :param filters: dict of field name and filter value combinations
         """
-        limit_clause = "LIMIT {}".format(limit) if limit else ""
+        limit_clause = f"LIMIT {limit}" if limit else ""
         order_by_clause = ""
         if order_by:
-            l = []
-            for field, desc in order_by:
-                l.append(field + " DESC" if desc else "")
+            l = [field + " DESC" if desc else "" for field, desc in order_by]
             order_by_clause = "ORDER BY " + ", ".join(l)
 
         where_clause = ""
         if filters:
-            l = []
-            for field, value in filters.items():
-                l.append(f"{field} = '{value}'")
+            l = [f"{field} = '{value}'" for field, value in filters.items()]
             where_clause = "WHERE " + " AND ".join(l)
 
         presto_version = database.get_extra().get("version")
@@ -1052,7 +1010,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             else f"SHOW PARTITIONS FROM {table_name}"
         )
 
-        sql = textwrap.dedent(
+        return textwrap.dedent(
             f"""\
             {partition_select_clause}
             {where_clause}
@@ -1060,7 +1018,6 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             {limit_clause}
         """
         )
-        return sql
 
     @classmethod
     def where_latest_partition(  # pylint: disable=too-many-arguments
@@ -1090,9 +1047,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
 
     @classmethod
     def _latest_partition_from_df(cls, df: pd.DataFrame) -> Optional[List[str]]:
-        if not df.empty:
-            return df.to_records(index=False)[0].item()
-        return None
+        return None if df.empty else df.to_records(index=False)[0].item()
 
     @classmethod
     @cache_manager.data_cache.memoize(timeout=60)
@@ -1172,14 +1127,13 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         """
         indexes = database.get_indexes(table_name, schema)
         part_fields = indexes[0]["column_names"]
-        for k in kwargs.keys():  # pylint: disable=consider-iterating-dictionary
+        for k in kwargs:  # pylint: disable=consider-iterating-dictionary
             if k not in k in part_fields:  # pylint: disable=comparison-with-itself
                 msg = "Field [{k}] is not part of the portioning key"
                 raise SupersetTemplateException(msg)
         if len(kwargs.keys()) != len(part_fields) - 1:
-            msg = (
-                "A filter needs to be specified for {} out of the " "{} fields."
-            ).format(len(part_fields) - 1, len(part_fields))
+            msg = f"A filter needs to be specified for {len(part_fields) - 1} out of the {len(part_fields)} fields."
+
             raise SupersetTemplateException(msg)
 
         for field in part_fields:
@@ -1190,9 +1144,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             table_name, database, 1, [(field_to_return, True)], kwargs
         )
         df = database.get_df(sql, schema)
-        if df.empty:
-            return ""
-        return df.to_dict()[field_to_return][0]
+        return "" if df.empty else df.to_dict()[field_to_return][0]
 
     @classmethod
     @cache_manager.data_cache.memoize()
@@ -1227,11 +1179,9 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         ] = column_type_mappings,
     ) -> Union[ColumnSpec, None]:
 
-        column_spec = super().get_column_spec(
+        if column_spec := super().get_column_spec(
             native_type, column_type_mappings=column_type_mappings
-        )
-
-        if column_spec:
+        ):
             return column_spec
 
         return super().get_column_spec(native_type)

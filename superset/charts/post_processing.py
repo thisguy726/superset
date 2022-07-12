@@ -152,7 +152,7 @@ def pivot_df(  # pylint: disable=too-many-locals, too-many-arguments, too-many-s
                 subtotal = pivot_v2_aggfunc_map[aggfunc](df.iloc[:, slice_], axis=1)
                 depth = df.columns.nlevels - len(subgroup) - 1
                 total = metric_name if level == 0 else "Subtotal"
-                subtotal_name = tuple([*subgroup, total, *([""] * depth)])
+                subtotal_name = *subgroup, total, *([""] * depth)
                 # insert column after subgroup
                 df.insert(int(slice_.stop), subtotal_name, subtotal)
 
@@ -169,7 +169,7 @@ def pivot_df(  # pylint: disable=too-many-locals, too-many-arguments, too-many-s
                 )
                 depth = df.index.nlevels - len(subgroup) - 1
                 total = metric_name if level == 0 else "Subtotal"
-                subtotal.name = tuple([*subgroup, total, *([""] * depth)])
+                subtotal.name = *subgroup, total, *([""] * depth)
                 # insert row after subgroup
                 df = pd.concat(
                     [df[: slice_.stop], subtotal.to_frame().T, df[slice_.stop :]]
@@ -187,7 +187,7 @@ def list_unique_values(series: pd.Series) -> str:
     """
     List unique values in a series.
     """
-    return ", ".join(set(str(v) for v in pd.Series.unique(series)))
+    return ", ".join({str(v) for v in pd.Series.unique(series)})
 
 
 pivot_v2_aggfunc_map = {

@@ -124,21 +124,7 @@ class TrinoEngineSpec(BaseEngineSpec):
         sql = f"EXPLAIN (TYPE IO, FORMAT JSON) {statement}"
         cursor.execute(sql)
 
-        # the output from Trino is a single column and a single row containing
-        # JSON:
-        #
-        #   {
-        #     ...
-        #     "estimate" : {
-        #       "outputRowCount" : 8.73265878E8,
-        #       "outputSizeInBytes" : 3.41425774958E11,
-        #       "cpuCost" : 3.41425774958E11,
-        #       "maxMemory" : 0.0,
-        #       "networkCost" : 3.41425774958E11
-        #     }
-        #   }
-        result = json.loads(cursor.fetchone()[0])
-        return result
+        return json.loads(cursor.fetchone()[0])
 
     @classmethod
     def query_cost_formatter(

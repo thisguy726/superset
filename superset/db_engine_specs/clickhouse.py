@@ -67,9 +67,7 @@ class ClickHouseEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
         new_exception = cls.get_dbapi_exception_mapping().get(type(exception))
         if new_exception == SupersetDBAPIDatabaseError:
             return SupersetDBAPIDatabaseError("Connection failed")
-        if not new_exception:
-            return exception
-        return new_exception(str(exception))
+        return new_exception(str(exception)) if new_exception else exception
 
     @classmethod
     def convert_dttm(

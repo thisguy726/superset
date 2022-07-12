@@ -43,8 +43,7 @@ def import_migration_script(filepath: Path) -> ModuleType:
     """
     Import migration script as if it were a module.
     """
-    spec = importlib.util.spec_from_file_location(filepath.stem, filepath)
-    if spec:
+    if spec := importlib.util.spec_from_file_location(filepath.stem, filepath):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)  # type: ignore
         return module
@@ -122,9 +121,12 @@ def find_models(module: ModuleType) -> List[Type[Model]]:
         inspector = inspect(model)
         dependent_tables: List[str] = []
         for column in inspector.columns.values():
-            for foreign_key in column.foreign_keys:
-                if foreign_key.column.table.name != model.__tablename__:
-                    dependent_tables.append(foreign_key.column.table.name)
+            dependent_tables.extend(
+                foreign_key.column.table.name
+                for foreign_key in column.foreign_keys
+                if foreign_key.column.table.name != model.__tablename__
+            )
+
         sorter.add(model.__tablename__, *dependent_tables)
     order = list(sorter.static_order())
     models.sort(key=lambda model: order.index(model.__tablename__))

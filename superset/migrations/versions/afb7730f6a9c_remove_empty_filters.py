@@ -53,10 +53,7 @@ def upgrade():
             params = json.loads(slc.params)
 
             for key in ("filters", "having_filters", "extra_filters"):
-                value = params.get(key)
-
-                # Remove empty in/not-in filters.
-                if value:
+                if value := params.get(key):
                     params[key] = [
                         x
                         for x in value

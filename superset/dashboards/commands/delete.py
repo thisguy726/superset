@@ -58,13 +58,14 @@ class DeleteDashboardCommand(BaseCommand):
         self._model = DashboardDAO.find_by_id(self._model_id)
         if not self._model:
             raise DashboardNotFoundError()
-        # Check there are no associated ReportSchedules
-        reports = ReportScheduleDAO.find_by_dashboard_id(self._model_id)
-        if reports:
+        if reports := ReportScheduleDAO.find_by_dashboard_id(self._model_id):
             report_names = [report.name for report in reports]
             raise DashboardDeleteFailedReportsExistError(
-                _("There are associated alerts or reports: %s" % ",".join(report_names))
+                _(
+                    f'There are associated alerts or reports: {",".join(report_names)}'
+                )
             )
+
         # Check ownership
         try:
             check_ownership(self._model)

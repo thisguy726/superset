@@ -183,9 +183,7 @@ class MySQLEngineSpec(BaseEngineSpec, BasicParametersMixin):
         datatype = type_code
         if isinstance(type_code, int):
             datatype = cls.type_code_map.get(type_code)
-        if datatype and isinstance(datatype, str) and datatype:
-            return datatype
-        return None
+        return datatype if datatype and isinstance(datatype, str) else None
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
@@ -218,8 +216,7 @@ class MySQLEngineSpec(BaseEngineSpec, BasicParametersMixin):
         ] = column_type_mappings,
     ) -> Union[ColumnSpec, None]:
 
-        column_spec = super().get_column_spec(native_type)
-        if column_spec:
+        if column_spec := super().get_column_spec(native_type):
             return column_spec
 
         return super().get_column_spec(

@@ -75,12 +75,10 @@ class UpdateDatabaseCommand(BaseCommand):
         if not self._model:
             raise DatabaseNotFoundError()
         database_name: Optional[str] = self._properties.get("database_name")
-        if database_name:
-            # Check database_name uniqueness
-            if not DatabaseDAO.validate_update_uniqueness(
-                self._model_id, database_name
-            ):
-                exceptions.append(DatabaseExistsValidationError())
+        if database_name and not DatabaseDAO.validate_update_uniqueness(
+            self._model_id, database_name
+        ):
+            exceptions.append(DatabaseExistsValidationError())
         if exceptions:
             exception = DatabaseInvalidError()
             exception.add_list(exceptions)

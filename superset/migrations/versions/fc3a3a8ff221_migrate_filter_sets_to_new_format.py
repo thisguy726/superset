@@ -110,7 +110,7 @@ def upgrade_filter_set(filter_set: Dict[str, Any]) -> int:
 
         # upgrade append filters
         appends = old_extra_form_data.pop("append_form_data", {})
-        extra_form_data.update(appends)
+        extra_form_data |= appends
 
         # upgrade override filters
         overrides = old_extra_form_data.pop("override_form_data", {})
@@ -183,9 +183,9 @@ def upgrade():
         try:
             json_metadata = json.loads(dashboard.json_metadata)
 
-            # upgrade native select filter metadata
-            native_filters = json_metadata.get("native_filter_configuration")
-            if native_filters:
+            if native_filters := json_metadata.get(
+                "native_filter_configuration"
+            ):
                 upgrade_select_filters(native_filters)
 
             # upgrade filter sets

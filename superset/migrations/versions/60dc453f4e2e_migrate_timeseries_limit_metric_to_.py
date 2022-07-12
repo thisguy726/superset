@@ -57,9 +57,7 @@ def upgrade():
     )
     slices = session.query(Slice).filter(where_clause)
     total = slices.count()
-    idx = 0
-    for slc in slices.yield_per(100):
-        idx += 1
+    for idx, slc in enumerate(slices.yield_per(100), start=1):
         print(f"Upgrading ({idx}/{total}): {slc.slice_name}#{slc.id}")
         params = json.loads(slc.params)
         params["legacy_order_by"] = params.pop("timeseries_limit_metric", None)

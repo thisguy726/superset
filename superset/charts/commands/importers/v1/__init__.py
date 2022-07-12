@@ -52,16 +52,19 @@ class ImportChartsCommand(ImportModelsCommand):
         session: Session, configs: Dict[str, Any], overwrite: bool = False
     ) -> None:
         # discover datasets associated with charts
-        dataset_uuids: Set[str] = set()
-        for file_name, config in configs.items():
-            if file_name.startswith("charts/"):
-                dataset_uuids.add(config["dataset_uuid"])
+        dataset_uuids: Set[str] = {
+            config["dataset_uuid"]
+            for file_name, config in configs.items()
+            if file_name.startswith("charts/")
+        }
 
         # discover databases associated with datasets
-        database_uuids: Set[str] = set()
-        for file_name, config in configs.items():
-            if file_name.startswith("datasets/") and config["uuid"] in dataset_uuids:
-                database_uuids.add(config["database_uuid"])
+        database_uuids: Set[str] = {
+            config["database_uuid"]
+            for file_name, config in configs.items()
+            if file_name.startswith("datasets/")
+            and config["uuid"] in dataset_uuids
+        }
 
         # import related databases
         database_ids: Dict[str, int] = {}

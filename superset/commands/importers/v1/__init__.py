@@ -104,8 +104,7 @@ class ImportModelsCommand(BaseCommand):
                 continue
 
             prefix = file_name.split("/")[0]
-            schema = self.schemas.get(f"{prefix}/")
-            if schema:
+            if schema := self.schemas.get(f"{prefix}/"):
                 try:
                     config = load_yaml(file_name, content)
 
@@ -124,21 +123,21 @@ class ImportModelsCommand(BaseCommand):
         # check if the object exists and shouldn't be overwritten
         if not self.overwrite:
             existing_uuids = self._get_uuids()
-            for file_name, config in self._configs.items():
+            exceptions.extend(
+                ValidationError(
+                    {
+                        file_name: (
+                            f"{self.model_name.title()} already exists "
+                            "and `overwrite=true` was not passed"
+                        ),
+                    }
+                )
+                for file_name, config in self._configs.items()
                 if (
                     file_name.startswith(self.prefix)
                     and config["uuid"] in existing_uuids
-                ):
-                    exceptions.append(
-                        ValidationError(
-                            {
-                                file_name: (
-                                    f"{self.model_name.title()} already exists "
-                                    "and `overwrite=true` was not passed"
-                                ),
-                            }
-                        )
-                    )
+                )
+            )
 
         if exceptions:
             exception = CommandInvalidError(f"Error importing {self.model_name}")

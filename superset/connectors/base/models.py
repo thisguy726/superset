@@ -193,13 +193,11 @@ class BaseDatasource(
 
     @property
     def url(self) -> str:
-        return "/{}/edit/{}".format(self.baselink, self.id)
+        return f"/{self.baselink}/edit/{self.id}"
 
     @property
     def explore_url(self) -> str:
-        if self.default_endpoint:
-            return self.default_endpoint
-        return f"/superset/explore/{self.type}/{self.id}/"
+        return self.default_endpoint or f"/superset/explore/{self.type}/{self.id}/"
 
     @property
     def column_formats(self) -> Dict[str, Optional[str]]:
@@ -237,20 +235,25 @@ class BaseDatasource(
         # self.column_names return sorted column_names
         for column_name in self.column_names:
             column_name = str(column_name or "")
-            order_by_choices.append(
-                (json.dumps([column_name, True]), column_name + " [asc]")
-            )
-            order_by_choices.append(
-                (json.dumps([column_name, False]), column_name + " [desc]")
+            order_by_choices.extend(
+                (
+                    (json.dumps([column_name, True]), f"{column_name} [asc]"),
+                    (json.dumps([column_name, False]), f"{column_name} [desc]"),
+                )
             )
 
-        verbose_map = {"__timestamp": "Time"}
-        verbose_map.update(
-            {o.metric_name: o.verbose_name or o.metric_name for o in self.metrics}
+        verbose_map = (
+            {"__timestamp": "Time"}
+            | {
+                o.metric_name: o.verbose_name or o.metric_name
+                for o in self.metrics
+            }
+            | {
+                o.column_name: o.verbose_name or o.column_name
+                for o in self.columns
+            }
         )
-        verbose_map.update(
-            {o.column_name: o.verbose_name or o.column_name for o in self.columns}
-        )
+
         return {
             # simple fields
             "id": self.id,
@@ -362,19 +365,20 @@ class BaseDatasource(
         del data["description"]
         data.update({"metrics": filtered_metrics})
         data.update({"columns": filtered_columns})
-        verbose_map = {"__timestamp": "Time"}
-        verbose_map.update(
-            {
-                metric["metric_name"]: metric["verbose_name"] or metric["metric_name"]
+        verbose_map = (
+            {"__timestamp": "Time"}
+            | {
+                metric["metric_name"]: metric["verbose_name"]
+                or metric["metric_name"]
                 for metric in filtered_metrics
             }
-        )
-        verbose_map.update(
-            {
-                column["column_name"]: column["verbose_name"] or column["column_name"]
+            | {
+                column["column_name"]: column["verbose_name"]
+                or column["column_name"]
                 for column in filtered_columns
             }
         )
+
         data["verbose_map"] = verbose_map
 
         return data
@@ -453,12 +457,14 @@ class BaseDatasource(
         return qry
 
     def get_column(self, column_name: Optional[str]) -> Optional["BaseColumn"]:
-        if not column_name:
-            return None
-        for col in self.columns:
-            if col.column_name == column_name:
-                return col
-        return None
+        return (
+            next(
+                (col for col in self.columns if col.column_name == column_name),
+                None,
+            )
+            if column_name
+            else None
+        )
 
     @staticmethod
     def get_fk_many_from_list(
@@ -478,8 +484,7 @@ class BaseDatasource(
 
         # sync existing fks
         for fk in fkmany:
-            obj = object_dict.get(getattr(fk, key_attr))
-            if obj:
+            if obj := object_dict.get(getattr(fk, key_attr)):
                 for attr in fkmany_class.update_from_object_fields:
                     setattr(fk, attr, obj.get(attr))
 
@@ -490,10 +495,12 @@ class BaseDatasource(
             key = obj.get(key_attr)
             if key not in orm_keys:
                 del obj["id"]
-                orm_kwargs = {}
-                for k in obj:
-                    if k in fkmany_class.update_from_object_fields and k in obj:
-                        orm_kwargs[k] = obj[k]
+                orm_kwargs = {
+                    k: obj[k]
+                    for k in obj
+                    if k in fkmany_class.update_from_object_fields and k in obj
+                }
+
                 new_obj = fkmany_class(**orm_kwargs)
                 new_fks.append(new_obj)
         fkmany += new_fks
@@ -549,9 +556,11 @@ class BaseDatasource(
         return hash(self.uid)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, BaseDatasource):
-            return NotImplemented
-        return self.uid == other.uid
+        return (
+            self.uid == other.uid
+            if isinstance(other, BaseDatasource)
+            else NotImplemented
+        )
 
     def raise_for_access(self) -> None:
         """
@@ -630,9 +639,7 @@ class BaseColumn(AuditMixinNullable, ImportExportMixin):
             return utils.GenericDataType.BOOLEAN
         if self.is_numeric:
             return utils.GenericDataType.NUMERIC
-        if self.is_temporal:
-            return utils.GenericDataType.TEMPORAL
-        return None
+        return utils.GenericDataType.TEMPORAL if self.is_temporal else None
 
     @property
     def expression(self) -> Column:

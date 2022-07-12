@@ -78,12 +78,11 @@ def upgrade():
             if "filter_scopes" in json_metadata:
                 continue
 
-            filters = [
-                slice for slice in dashboard.slices if slice.viz_type == "filter_box"
-            ]
-
-            # if dashboard has filter_box
-            if filters:
+            if filters := [
+                slice
+                for slice in dashboard.slices
+                if slice.viz_type == "filter_box"
+            ]:
                 filter_scopes = convert_filter_scopes(json_metadata, filters)
                 json_metadata["filter_scopes"] = filter_scopes
                 logging.info(

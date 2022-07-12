@@ -77,7 +77,7 @@ class Dashboard(Base):
 def create_new_markdown_component(chart_position, url):
     return {
         "type": "MARKDOWN",
-        "id": "MARKDOWN-{}".format(uuid.uuid4().hex[:8]),
+        "id": f"MARKDOWN-{uuid.uuid4().hex[:8]}",
         "children": [],
         "parents": chart_position["parents"],
         "meta": {

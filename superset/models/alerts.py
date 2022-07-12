@@ -109,14 +109,12 @@ class Alert(Model, AuditMixinNullable):
         )
 
     def get_last_observation(self) -> Optional[Any]:
-        observations = list(
+        if observations := list(
             db.session.query(SQLObservation)
             .filter_by(alert_id=self.id)
             .order_by(SQLObservation.dttm.desc())
             .limit(1)
-        )
-
-        if observations:
+        ):
             return observations[0]
 
         return None
@@ -132,10 +130,7 @@ class Alert(Model, AuditMixinNullable):
         if self.validator_type.lower() == "operator":
             return f"{config['op']} {config['threshold']}"
 
-        if self.validator_type.lower() == "not null":
-            return "!= Null or 0"
-
-        return ""
+        return "!= Null or 0" if self.validator_type.lower() == "not null" else ""
 
 
 class AlertLog(Model):

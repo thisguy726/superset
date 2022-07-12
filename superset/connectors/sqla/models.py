@@ -415,7 +415,7 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
 
         attr_dict = {s: getattr(self, s) for s in attrs if hasattr(self, s)}
 
-        attr_dict.update(super().data)
+        attr_dict |= super().data
 
         return attr_dict
 
@@ -478,7 +478,7 @@ class SqlMetric(Model, BaseMetric, CertificationMixin):
         )
         attr_dict = {s: getattr(self, s) for s in attrs}
 
-        attr_dict.update(super().data)
+        attr_dict |= super().data
         return attr_dict
 
 
@@ -570,15 +570,15 @@ class SqlaTable(Model, BaseDatasource):  # pylint: disable=too-many-public-metho
 
     @property
     def changed_by_name(self) -> str:
-        if not self.changed_by:
-            return ""
-        return str(self.changed_by)
+        return str(self.changed_by) if self.changed_by else ""
 
     @property
     def changed_by_url(self) -> str:
-        if not self.changed_by:
-            return ""
-        return f"/superset/profile/{self.changed_by.username}"
+        return (
+            f"/superset/profile/{self.changed_by.username}"
+            if self.changed_by
+            else ""
+        )
 
     @property
     def connection(self) -> str:
@@ -615,12 +615,9 @@ class SqlaTable(Model, BaseDatasource):  # pylint: disable=too-many-public-metho
             .filter(cls.table_name == datasource_name)
             .filter(Database.database_name == database_name)
         )
-        # Handling schema being '' or None, which is easier to handle
-        # in python than in the SQLA query in a multi-dialect way
-        for tbl in query.all():
-            if schema == (tbl.schema or None):
-                return tbl
-        return None
+        return next(
+            (tbl for tbl in query.all() if schema == (tbl.schema or None)), None
+        )
 
     @property
     def link(self) -> Markup:
@@ -637,9 +634,7 @@ class SqlaTable(Model, BaseDatasource):  # pylint: disable=too-many-public-metho
 
     @property
     def name(self) -> str:
-        if not self.schema:
-            return self.table_name
-        return "{}.{}".format(self.schema, self.table_name)
+        return f"{self.schema}.{self.table_name}" if self.schema else self.table_name
 
     @property
     def full_name(self) -> str:
@@ -773,8 +768,7 @@ class SqlaTable(Model, BaseDatasource):  # pylint: disable=too-many-public-metho
         """Apply config's SQL_QUERY_MUTATOR
 
         Typically adds comments to the query with context"""
-        sql_query_mutator = config["SQL_QUERY_MUTATOR"]
-        if sql_query_mutator:
+        if sql_query_mutator := config["SQL_QUERY_MUTATOR"]:
             username = utils.get_username()
             sql = sql_query_mutator(sql, username, security_manager, self.database)
         return sql

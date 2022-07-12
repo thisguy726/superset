@@ -51,8 +51,7 @@ def upgrade():
 
     for slc in session.query(Slice).filter(Slice.viz_type.like("directed_force")):
         params = json.loads(slc.params)
-        groupby = params.get("groupby", [])
-        if groupby:
+        if groupby := params.get("groupby", []):
             params["source"] = groupby[0]
             params["target"] = groupby[1] if len(groupby) > 1 else None
             del params["groupby"]

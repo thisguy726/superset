@@ -23,8 +23,7 @@ from superset.charts.commands.exceptions import ChartDataCacheLoadError
 class QueryContextCacheLoader:  # pylint: disable=too-few-public-methods
     @staticmethod
     def load(cache_key: str) -> Dict[str, Any]:
-        cache_value = cache.get(cache_key)
-        if not cache_value:
+        if cache_value := cache.get(cache_key):
+            return cache_value["data"]
+        else:
             raise ChartDataCacheLoadError("Cached data not found")
-
-        return cache_value["data"]

@@ -37,12 +37,7 @@ def load_tabbed_dashboard(_: bool = False) -> None:
 
     # reuse charts in "World's Bank Data and create
     # new dashboard with nested tabs
-    tabbed_dash_slices = set()
-    tabbed_dash_slices.add("Region Filter")
-    tabbed_dash_slices.add("Growth Rate")
-    tabbed_dash_slices.add("Treemap")
-    tabbed_dash_slices.add("Box plot")
-
+    tabbed_dash_slices = {"Region Filter", "Growth Rate", "Treemap", "Box plot"}
     js = textwrap.dedent(
         """\
     {

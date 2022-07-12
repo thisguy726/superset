@@ -58,16 +58,15 @@ def upgrade():
     for dashboard in dashboards:
         try:
             json_metadata = json.loads(dashboard.json_metadata)
-            filter_configuration = json_metadata.pop("filter_configuration", None)
-            if filter_configuration:
+            if filter_configuration := json_metadata.pop(
+                "filter_configuration", None
+            ):
                 changes += 1
                 json_metadata["native_filter_configuration"] = filter_configuration
                 dashboard.json_metadata = json.dumps(json_metadata, sort_keys=True)
         except Exception as e:
             print(e)
             print(f"Parsing json_metadata for dashboard {dashboard.id} failed.")
-            pass
-
     session.commit()
     session.close()
     print(f"Updated {changes} native filter configurations.")
@@ -86,18 +85,15 @@ def downgrade():
     for dashboard in dashboards:
         try:
             json_metadata = json.loads(dashboard.json_metadata)
-            native_filter_configuration = json_metadata.pop(
+            if native_filter_configuration := json_metadata.pop(
                 "native_filter_configuration", None
-            )
-            if native_filter_configuration:
+            ):
                 changes += 1
                 json_metadata["filter_configuration"] = native_filter_configuration
                 dashboard.json_metadata = json.dumps(json_metadata, sort_keys=True)
         except Exception as e:
             print(e)
             print(f"Parsing json_metadata for dashboard {dashboard.id} failed.")
-            pass
-
     session.commit()
     session.close()
     print(f"Updated {changes} pie chart labels.")

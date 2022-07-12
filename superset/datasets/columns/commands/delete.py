@@ -47,8 +47,7 @@ class DeleteDatasetColumnCommand(BaseCommand):
         try:
             if not self._model:
                 raise DatasetColumnNotFoundError()
-            column = DatasetDAO.delete_column(self._model)
-            return column
+            return DatasetDAO.delete_column(self._model)
         except DAODeleteFailedError as ex:
             logger.exception(ex.exception)
             raise DatasetColumnDeleteFailedError() from ex

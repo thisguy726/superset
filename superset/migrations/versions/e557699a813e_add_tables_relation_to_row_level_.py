@@ -57,10 +57,9 @@ def upgrade():
         bind.execute(move_table_id)
 
     with op.batch_alter_table("row_level_security_filters") as batch_op:
-        fk_constraint_name = generic_find_fk_constraint_name(
+        if fk_constraint_name := generic_find_fk_constraint_name(
             "row_level_security_filters", {"id"}, "tables", insp
-        )
-        if fk_constraint_name:
+        ):
             batch_op.drop_constraint(fk_constraint_name, type_="foreignkey")
         batch_op.drop_column("table_id")
 

@@ -135,7 +135,7 @@ def _set_table_metadata(datasource: SqlaTable, database: "Database") -> None:
 
 
 def _add_table_metrics(datasource: SqlaTable) -> None:
-    if not any(col.column_name == "num_california" for col in datasource.columns):
+    if all(col.column_name != "num_california" for col in datasource.columns):
         col_state = str(column("state").compile(db.engine))
         col_num = str(column("num").compile(db.engine))
         datasource.columns.append(
@@ -145,7 +145,7 @@ def _add_table_metrics(datasource: SqlaTable) -> None:
             )
         )
 
-    if not any(col.metric_name == "sum__num" for col in datasource.metrics):
+    if all(col.metric_name != "sum__num" for col in datasource.metrics):
         col = str(column("num").compile(db.engine))
         datasource.metrics.append(
             SqlMetric(metric_name="sum__num", expression=f"SUM({col})")
